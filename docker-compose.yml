@@ -1,0 +1,14 @@
+services:
+  upwork_admin_web:
+    build: .
+    container_name: upwork_admin_web
+    restart: always
+    ports:
+      - "5173:5173"
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+      - /app/node_modules
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # доступ к хосту из контейнера (Linux)
