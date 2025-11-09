@@ -1,7 +1,6 @@
 // src/resources/upworkJobs/list.tsx
 import * as React from "react";
-import { useCreatePath } from "react-admin";
-import { Link as RouterLink } from "react-router-dom";
+
 import {
   List,
   Datagrid,
@@ -11,6 +10,7 @@ import {
   ExportButton,
   Pagination,
   FunctionField,
+  Link
 } from "react-admin";
 import type { UpworkJob } from "../../types/upwork";
 import {
@@ -25,6 +25,8 @@ import {
 import DeleteIcon from "@mui/icons-material/Delete";
 import IconButton from "@mui/material/IconButton";
 import { useDelete, useNotify, useRefresh } from "react-admin";
+import { JobsAside } from "./aside";
+
 
 const JobsPagination = (props: any) => (
   <Pagination rowsPerPageOptions={[10, 20, 50, 100, 200]} {...props} />
@@ -147,29 +149,21 @@ export const UpworkJobsList = () => (
     pagination={<JobsPagination />}
     perPage={20}
     sort={{ field: "id", order: "DESC" }}
+    aside={<JobsAside />} 
   >
     <Datagrid
       bulkActionButtons={false}
-      rowClick={false} // отключаем expand целиком
+      rowClick={false}
       sx={{ "& .RaDatagrid-thead": { position: "sticky", top: 0, zIndex: 1 } }}
     >
       <FunctionField
-        label="ID"
-        render={(r: UpworkJob) => {
-          const createPath = useCreatePath(); // хук RA для генерации маршрутов
-          const to = createPath({ resource: "upwork-jobs", id: r.id, type: "show" });
-          return (
-            <MuiLink
-              component={RouterLink}   // ← важно!
-              to={to}
-              underline="hover"
-              sx={{ fontWeight: 700, textDecoration: "none" }}
-            >
-              {r.id}
-            </MuiLink>
-          );
-        }}
-      />
+  label="ID"
+  render={(record) => (
+    <Link to={`/upwork-jobs/${record.id}/show`}>
+      {record.id}
+    </Link>
+  )}
+/>
 
       {/* 🔗 Title как ссылка на source_url */}
       <FunctionField
@@ -201,9 +195,15 @@ export const UpworkJobsList = () => (
       <RangeField min="job_budget_min" max="job_budget_max" unit=" budget" />
 
       {/* 📝 Описание: обрезка + кнопка View → диалог с полным текстом */}
-      <FunctionField
+      {/* <FunctionField
         label="Description"
         render={(r: UpworkJob) => <DescriptionCell record={r} />}
+      /> */}
+      <FunctionField
+        label="Total Spent"
+        render={(record: any) =>
+          String(record?.client_total_spent ?? "").replace(/\s*total spent/i, "")
+        }
       />
 
       <DateField source="scraped_at" label="Scraped" />

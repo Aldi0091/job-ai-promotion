@@ -12,34 +12,48 @@ import { httpJson } from "../utils/http";
 export const dataProvider: DataProvider = {
   // важно: сигнатура совместима с DataProvider
   getList: async (
-    _resource: string,
-    params: GetListParams
-  ): Promise<GetListResult<RaRecord>> => {
-    const page = params?.pagination?.page ?? 1;
-    const perPage = params?.pagination?.perPage ?? 20;
+  resource: string,
+  params: GetListParams
+): Promise<GetListResult<RaRecord>> => {
+  if (resource !== "upwork-jobs") throw new Error("unsupported resource");
 
-    const json = await httpJson(
-      `/api/upwork-jobs/?page=${page}&page_size=${perPage}`
-    );
+  const page = params?.pagination?.page ?? 1;
+  const perPage = params?.pagination?.perPage ?? 20;
 
-    // вернём как RaRecord[], чтобы пройти общий контракт
-    const items = (json.items || []).map((r: any) => ({
-      ...r,
-      scraped_at: r.scraped_at ? new Date(r.scraped_at).toISOString() : null,
-    })) as RaRecord[];
+  // ← важное: берём фильтр и сорт из RA
+  const filterObj = params?.filter ?? {};
+  const filter = encodeURIComponent(JSON.stringify(filterObj));
+  const sort = params?.sort?.field ?? "id";
+  const order = params?.sort?.order ?? "DESC";
 
-    const total = Number(json.total ?? items.length);
-    const hasNextPage = page * perPage < total;
+  const url =
+    `/api/upwork-jobs` +
+    `?page=${page}` +
+    `&page_size=${perPage}` +
+    `&sort=${encodeURIComponent(String(sort))}` +
+    `&order=${encodeURIComponent(String(order))}` +
+    `&filter=${filter}`;
 
-    return {
-      data: items,
-      total,
-      pageInfo: {
-        hasNextPage,
-        hasPreviousPage: page > 1,
-      },
-    } as GetListResult<RaRecord>;
-  },
+  const json = await httpJson(url);
+
+  const items = (json.items || []).map((r: any) => ({
+    ...r,
+    scraped_at: r.scraped_at ? new Date(r.scraped_at).toISOString() : null,
+  })) as RaRecord[];
+
+  const total = Number(json.total ?? items.length);
+  const hasNextPage = page * perPage < total;
+
+  return {
+    data: items,
+    total,
+    pageInfo: {
+      hasNextPage,
+      hasPreviousPage: page > 1,
+    },
+  };
+},
+
 
   // Заглушки — добавим при появлении эндпоинтов
   getOne: async (resource, params) => {
