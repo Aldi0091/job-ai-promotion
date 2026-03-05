@@ -1,5 +1,6 @@
 export type UpworkJob = {
     id: number;
+    favorite?: boolean;
     job_title?: string | null;
     description?: string | null;
     source_url?: string | null;
