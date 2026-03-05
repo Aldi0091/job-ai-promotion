@@ -15,13 +15,17 @@ export const dataProvider: DataProvider = {
   resource: string,
   params: GetListParams
 ): Promise<GetListResult<RaRecord>> => {
-  if (resource !== "upwork-jobs") throw new Error("unsupported resource");
+  const isFavorites = resource === "upwork-jobs-favorites";
+  if (resource !== "upwork-jobs" && !isFavorites) throw new Error("unsupported resource");
 
   const page = params?.pagination?.page ?? 1;
   const perPage = params?.pagination?.perPage ?? 20;
 
   // ← важное: берём фильтр и сорт из RA
-  const filterObj = params?.filter ?? {};
+  const filterObj = {
+    ...(params?.filter ?? {}),
+    ...(isFavorites ? { favorite: true } : {}),
+  };
   const filter = encodeURIComponent(JSON.stringify(filterObj));
   const sort = params?.sort?.field ?? "id";
   const order = params?.sort?.order ?? "DESC";
@@ -66,8 +70,19 @@ export const dataProvider: DataProvider = {
   create: async () => {
     throw new Error("create not implemented");
   },
-  update: async () => {
-    throw new Error("update not implemented");
+  async update<RecordType extends RaRecord = RaRecord>(
+    resource: string,
+    params: any
+  ) {
+    if (resource !== "upwork-jobs") throw new Error("unsupported resource");
+
+    const res = await httpJson(`/api/upwork-jobs/${params.id}`, {
+      method: "PATCH",
+      body: JSON.stringify(params.data ?? {}),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    return { data: res as RecordType };
   },
   async delete<RecordType extends RaRecord = RaRecord>(
     resource: string,

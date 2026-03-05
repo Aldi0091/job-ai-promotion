@@ -12,6 +12,7 @@ import {
   useDelete,
   useNotify,
   useRefresh,
+  useUpdate,
 } from "react-admin";
 
 import { Link } from "react-router-dom";
@@ -30,6 +31,8 @@ import {
 } from "@mui/material";
 
 import DeleteIcon from "@mui/icons-material/Delete";
+import StarIcon from "@mui/icons-material/Star";
+import StarBorderIcon from "@mui/icons-material/StarBorder";
 import { JobsAside } from "./aside";
 
 
@@ -173,6 +176,41 @@ const DeleteJobButton: React.FC<{ id: number }> = ({ id }) => {
 };
 
 
+const FavoriteJobButton: React.FC<{ record: UpworkJob }> = ({ record }) => {
+  const [updateOne, { isLoading }] = useUpdate();
+  const notify = useNotify();
+  const refresh = useRefresh();
+
+  const handleToggle = () => {
+    updateOne(
+      "upwork-jobs",
+      {
+        id: record.id,
+        data: { favorite: !record.favorite },
+        previousData: record,
+      },
+      {
+        mutationMode: "pessimistic",
+        onSuccess: () => refresh(),
+        onError: (error: any) => {
+          notify(error?.message || "Failed to update favorite", { type: "warning" });
+        },
+      }
+    );
+  };
+
+  return (
+    <IconButton size="small" onClick={handleToggle} disabled={isLoading}>
+      {record.favorite ? (
+        <StarIcon fontSize="small" />
+      ) : (
+        <StarBorderIcon fontSize="small" />
+      )}
+    </IconButton>
+  );
+};
+
+
 /* ------------------------------ Main List ------------------------------ */
 
 export const UpworkJobsList = () => (
@@ -181,7 +219,7 @@ export const UpworkJobsList = () => (
     pagination={<JobsPagination />}
     perPage={20}
     sort={{ field: "id", order: "DESC" }}
-    aside={<JobsAside />}
+    // aside={<JobsAside />}
   >
     <Datagrid
       bulkActionButtons={false}
@@ -260,7 +298,12 @@ export const UpworkJobsList = () => (
       {/* Actions */}
       <FunctionField
         label="Actions"
-        render={(r: UpworkJob) => <DeleteJobButton id={r.id} />}
+        render={(r: UpworkJob) => (
+          <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
+            <FavoriteJobButton record={r} />
+            <DeleteJobButton id={r.id} />
+          </Box>
+        )}
       />
 
     </Datagrid>
