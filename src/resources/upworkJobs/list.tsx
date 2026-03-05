@@ -68,6 +68,39 @@ const cleanTotalSpent = (value?: string | null) => {
   return value.replace(/\s*total spent/i, "");
 };
 
+const parseMoneySpent = (value?: string | null) => {
+  if (!value) return null;
+
+  // Examples: "$35K total spent", "$10,000+", "$1.2M", "—"
+  const s = String(value).toUpperCase().replace(/TOTAL SPENT/gi, "").trim();
+  const m = s.match(/([\d.,]+)\s*([KM])?/i);
+  if (!m) return null;
+
+  const n = parseFloat(m[1].replace(/,/g, ""));
+  if (Number.isNaN(n)) return null;
+
+  const mult = m[2] === "M" ? 1_000_000 : m[2] === "K" ? 1_000 : 1;
+  return n * mult;
+};
+
+const getHourlyMax = (r: UpworkJob) => {
+  const lo = r?.job_hourly_min ?? null;
+  const hi = r?.job_hourly_max ?? null;
+  const best = Math.max(lo ?? -Infinity, hi ?? -Infinity);
+  return Number.isFinite(best) ? best : null;
+};
+
+const getSignal = (r: UpworkJob) => {
+  const hourly = getHourlyMax(r);
+  const spent = parseMoneySpent(r?.client_total_spent);
+
+  const hourlyOk = hourly != null && hourly > 25;
+  const spentOk = spent != null && spent > 15_000;
+
+  if (hourlyOk && spentOk) return "green";
+  if (hourlyOk || spentOk) return "orange";
+  return null;
+};
 
 /* ----------------------------- Range Field ----------------------------- */
 
@@ -224,12 +257,25 @@ export const UpworkJobsList = () => (
     <Datagrid
       bulkActionButtons={false}
       rowClick={false}
+      rowSx={(record: UpworkJob) => {
+        const signal = getSignal(record);
+        if (!signal) return {};
+
+        if (signal === "green") {
+          return {
+            backgroundColor: "rgba(46, 125, 50, 0.10)",
+            borderLeft: "4px solid rgba(46, 125, 50, 0.85)",
+          };
+        }
+
+        // orange
+        return {
+          backgroundColor: "rgba(245, 124, 0, 0.10)",
+          borderLeft: "4px solid rgba(245, 124, 0, 0.85)",
+        };
+      }}
       sx={{
-        "& .RaDatagrid-thead": {
-          position: "sticky",
-          top: 0,
-          zIndex: 1,
-        },
+        "& .RaDatagrid-thead": { position: "sticky", top: 0, zIndex: 1 },
       }}
     >
 
