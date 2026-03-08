@@ -13,8 +13,11 @@ import {
   useNotify,
   useRefresh,
   useUpdate,
+  AutocompleteArrayInput,
+  useGetList,
+  FilterForm,
 } from "react-admin";
-
+import { Stack } from "@mui/material";
 import { Link } from "react-router-dom";
 
 import type { UpworkJob } from "../../types/upwork";
@@ -33,10 +36,7 @@ import {
 import DeleteIcon from "@mui/icons-material/Delete";
 import StarIcon from "@mui/icons-material/Star";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
-import { JobsAside } from "./aside";
 
-
-/* ----------------------------- Pagination ----------------------------- */
 
 const JobsPagination = (props: any) => (
   <Pagination rowsPerPageOptions={[10, 20, 50, 100, 200]} {...props} />
@@ -44,6 +44,15 @@ const JobsPagination = (props: any) => (
 
 
 /* ------------------------------- Actions ------------------------------- */
+
+const jobFilters = [
+  <CountryMultiFilterInput
+    key="country_multi_filter"
+    source="client_countries"
+    label="Countries"
+    alwaysOn
+  />,
+];
 
 const ListActions = () => (
   <TopToolbar>
@@ -71,7 +80,6 @@ const cleanTotalSpent = (value?: string | null) => {
 const parseMoneySpent = (value?: string | null) => {
   if (!value) return null;
 
-  // Examples: "$35K total spent", "$10,000+", "$1.2M", "—"
   const s = String(value).toUpperCase().replace(/TOTAL SPENT/gi, "").trim();
   const m = s.match(/([\d.,]+)\s*([KM])?/i);
   if (!m) return null;
@@ -102,6 +110,7 @@ const getSignal = (r: UpworkJob) => {
   return null;
 };
 
+
 /* ----------------------------- Range Field ----------------------------- */
 
 const RangeField: React.FC<{
@@ -118,6 +127,41 @@ const RangeField: React.FC<{
   />
 );
 
+
+/* --------------------------- Country Filter --------------------------- */
+
+type CountryMultiFilterInputProps = {
+  source?: string;
+  label?: string;
+  alwaysOn?: boolean;
+};
+
+function CountryMultiFilterInput(props: CountryMultiFilterInputProps) {
+  const { data, isLoading } = useGetList("upwork-job-countries", {
+    pagination: { page: 1, perPage: 500 },
+    sort: { field: "name", order: "ASC" },
+    filter: {},
+  });
+
+  const choices = React.useMemo(() => {
+    return ((data || []) as any[]).map((item) => ({
+      id: item.id,
+      name: item.name,
+    }));
+  }, [data]);
+
+  return (
+    <AutocompleteArrayInput
+      {...props}
+      choices={choices}
+      optionText="name"
+      optionValue="id"
+      isLoading={isLoading}
+      fullWidth
+      sx={{ minWidth: 320 }}
+    />
+  );
+}
 
 /* --------------------------- Description Cell -------------------------- */
 
@@ -208,7 +252,6 @@ const DeleteJobButton: React.FC<{ id: number }> = ({ id }) => {
   );
 };
 
-
 const FavoriteJobButton: React.FC<{ record: UpworkJob }> = ({ record }) => {
   const [updateOne, { isLoading }] = useUpdate();
   const notify = useNotify();
@@ -243,7 +286,6 @@ const FavoriteJobButton: React.FC<{ record: UpworkJob }> = ({ record }) => {
   );
 };
 
-
 /* ------------------------------ Main List ------------------------------ */
 
 export const UpworkJobsList = () => (
@@ -252,106 +294,98 @@ export const UpworkJobsList = () => (
     pagination={<JobsPagination />}
     perPage={20}
     sort={{ field: "id", order: "DESC" }}
-    // aside={<JobsAside />}
   >
-    <Datagrid
-      bulkActionButtons={false}
-      rowClick={false}
-      rowSx={(record: UpworkJob) => {
-        const signal = getSignal(record);
-        if (!signal) return {};
+    <Stack spacing={1} sx={{ mb: 1 }}>
+      <FilterForm filters={jobFilters} />
+      <Datagrid
+        bulkActionButtons={false}
+        rowClick={false}
+        rowSx={(record: UpworkJob) => {
+          const signal = getSignal(record);
+          if (!signal) return {};
 
-        if (signal === "green") {
+          if (signal === "green") {
+            return {
+              backgroundColor: "rgba(46, 125, 50, 0.10)",
+              borderLeft: "4px solid rgba(46, 125, 50, 0.85)",
+            };
+          }
+
           return {
-            backgroundColor: "rgba(46, 125, 50, 0.10)",
-            borderLeft: "4px solid rgba(46, 125, 50, 0.85)",
+            backgroundColor: "rgba(245, 124, 0, 0.10)",
+            borderLeft: "4px solid rgba(245, 124, 0, 0.85)",
           };
-        }
+        }}
+        sx={{
+          "& .RaDatagrid-thead": { position: "sticky", top: 0, zIndex: 1 },
+        }}
+      >
+        <FunctionField
+          label="ID"
+          render={(record: UpworkJob) => (
+            <Link to={`/upwork-jobs/${record.id}/show`}>
+              {record.id}
+            </Link>
+          )}
+        />
 
-        // orange
-        return {
-          backgroundColor: "rgba(245, 124, 0, 0.10)",
-          borderLeft: "4px solid rgba(245, 124, 0, 0.85)",
-        };
-      }}
-      sx={{
-        "& .RaDatagrid-thead": { position: "sticky", top: 0, zIndex: 1 },
-      }}
-    >
+        <FunctionField
+          label="Title"
+          render={(r: UpworkJob) =>
+            r?.source_url ? (
+              <MuiLink
+                href={r.source_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                underline="hover"
+              >
+                {r.job_title || "—"}
+              </MuiLink>
+            ) : (
+              <TextField source="job_title" />
+            )
+          }
+        />
 
-      {/* ID */}
-      <FunctionField
-        label="ID"
-        render={(record: UpworkJob) => (
-          <Link to={`/upwork-jobs/${record.id}/show`}>
-            {record.id}
-          </Link>
-        )}
-      />
+        <TextField source="client_country" label="Country" />
+        <TextField source="client_city" label="City" />
+        <TextField source="client_rating" label="Rating" />
+        <TextField source="job_rate_type" label="Rate Type" />
 
-      {/* Title → link to Upwork */}
-      <FunctionField
-        label="Title"
-        render={(r: UpworkJob) =>
-          r?.source_url ? (
-            <MuiLink
-              href={r.source_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              underline="hover"
-            >
-              {r.job_title || "—"}
-            </MuiLink>
-          ) : (
-            <TextField source="job_title" />
-          )
-        }
-      />
+        <RangeField
+          label="Hourly Rate"
+          min="job_hourly_min"
+          max="job_hourly_max"
+          unit="/hr"
+        />
 
-      {/* Client */}
-      <TextField source="client_country" label="Country" />
-      <TextField source="client_city" label="City" />
-      <TextField source="client_rating" label="Rating" />
+        <RangeField
+          label="Budget"
+          min="job_budget_min"
+          max="job_budget_max"
+          unit=""
+        />
 
-      {/* Rate */}
-      <TextField source="job_rate_type" label="Rate Type" />
+        <FunctionField
+          label="Total Spent"
+          render={(record: UpworkJob) =>
+            cleanTotalSpent(record?.client_total_spent)
+          }
+        />
 
-      <RangeField
-        label="Hourly Rate"
-        min="job_hourly_min"
-        max="job_hourly_max"
-        unit="/hr"
-      />
+        <DateField source="scraped_at" label="Scraped" showTime />
 
-      <RangeField
-        label="Budget"
-        min="job_budget_min"
-        max="job_budget_max"
-        unit=""
-      />
-
-      {/* Total Spent */}
-      <FunctionField
-        label="Total Spent"
-        render={(record: UpworkJob) =>
-          cleanTotalSpent(record?.client_total_spent)
-        }
-      />
-
-      {/* Scraped */}
-      <DateField source="scraped_at" label="Scraped" showTime />
-
-      {/* Actions */}
-      <FunctionField
-        label="Actions"
-        render={(r: UpworkJob) => (
-          <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
-            <FavoriteJobButton record={r} />
-            <DeleteJobButton id={r.id} />
-          </Box>
-        )}
-      />
-
-    </Datagrid>
+        <FunctionField
+          label="Actions"
+          render={(r: UpworkJob) => (
+            <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
+              <FavoriteJobButton record={r} />
+              <DeleteJobButton id={r.id} />
+            </Box>
+          )}
+        />
+      </Datagrid>
+    </Stack>
+    
   </List>
 );

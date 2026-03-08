@@ -12,51 +12,67 @@ import { httpJson } from "../utils/http";
 export const dataProvider: DataProvider = {
   // важно: сигнатура совместима с DataProvider
   getList: async (
-  resource: string,
-  params: GetListParams
-): Promise<GetListResult<RaRecord>> => {
-  const isFavorites = resource === "upwork-jobs-favorites";
-  if (resource !== "upwork-jobs" && !isFavorites) throw new Error("unsupported resource");
+    resource: string,
+    params: GetListParams
+  ): Promise<GetListResult<RaRecord>> => {
+    const isFavorites = resource === "upwork-jobs-favorites";
+    const isCountries = resource === "upwork-job-countries";
 
-  const page = params?.pagination?.page ?? 1;
-  const perPage = params?.pagination?.perPage ?? 20;
+    if (isCountries) {
+      const json = await httpJson(`/api/upwork-jobs/countries`);
+      return {
+        data: (json || []) as RaRecord[],
+        total: (json || []).length,
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+        },
+      };
+    }
 
-  // ← важное: берём фильтр и сорт из RA
-  const filterObj = {
-    ...(params?.filter ?? {}),
-    ...(isFavorites ? { favorite: true } : {}),
-  };
-  const filter = encodeURIComponent(JSON.stringify(filterObj));
-  const sort = params?.sort?.field ?? "id";
-  const order = params?.sort?.order ?? "DESC";
+    if (resource !== "upwork-jobs" && !isFavorites) {
+      throw new Error("unsupported resource");
+    }
 
-  const url =
-    `/api/upwork-jobs` +
-    `?page=${page}` +
-    `&page_size=${perPage}` +
-    `&sort=${encodeURIComponent(String(sort))}` +
-    `&order=${encodeURIComponent(String(order))}` +
-    `&filter=${filter}`;
+    const page = params?.pagination?.page ?? 1;
+    const perPage = params?.pagination?.perPage ?? 20;
 
-  const json = await httpJson(url);
+    const filterObj = {
+      ...(params?.filter ?? {}),
+      ...(isFavorites ? { favorite: true } : {}),
+    };
 
-  const items = (json.items || []).map((r: any) => ({
-    ...r,
-    scraped_at: r.scraped_at ? new Date(r.scraped_at).toISOString() : null,
-  })) as RaRecord[];
+    const filter = encodeURIComponent(JSON.stringify(filterObj));
+    const sort = params?.sort?.field ?? "id";
+    const order = params?.sort?.order ?? "DESC";
 
-  const total = Number(json.total ?? items.length);
-  const hasNextPage = page * perPage < total;
+    const url =
+      `/api/upwork-jobs` +
+      `?page=${page}` +
+      `&page_size=${perPage}` +
+      `&sort=${encodeURIComponent(String(sort))}` +
+      `&order=${encodeURIComponent(String(order))}` +
+      `&filter=${filter}`;
 
-  return {
-    data: items,
-    total,
-    pageInfo: {
-      hasNextPage,
-      hasPreviousPage: page > 1,
-    },
-  };
-},
+    const json = await httpJson(url);
+
+    const items = (json.items || []).map((r: any) => ({
+      ...r,
+      scraped_at: r.scraped_at ? new Date(r.scraped_at).toISOString() : null,
+    })) as RaRecord[];
+
+    const total = Number(json.total ?? items.length);
+    const hasNextPage = page * perPage < total;
+
+    return {
+      data: items,
+      total,
+      pageInfo: {
+        hasNextPage,
+        hasPreviousPage: page > 1,
+      },
+    };
+  },
 
 
   // Заглушки — добавим при появлении эндпоинтов
