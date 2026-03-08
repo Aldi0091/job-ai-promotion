@@ -1,5 +1,8 @@
 // src/resources/upworkJobs/show.tsx
 import * as React from "react";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import CheckIcon from "@mui/icons-material/Check";
+import IconButton from "@mui/material/IconButton";
 import { Show, TopToolbar, ListButton, useRecordContext } from "react-admin";
 import {
   Box,
@@ -21,6 +24,28 @@ const HeaderActions = () => (
     <ListButton label="Back to list" />
   </TopToolbar>
 );
+
+const CopySubmissionButton: React.FC<{ text: string }> = ({ text }) => {
+  const [copied, setCopied] = React.useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch (e) {
+      console.error("Clipboard copy failed", e);
+    }
+  };
+
+  return (
+    <Tooltip title={copied ? "Copied" : "Copy submission"}>
+      <IconButton size="small" onClick={handleCopy}>
+        {copied ? <CheckIcon fontSize="small" /> : <ContentCopyIcon fontSize="small" />}
+      </IconButton>
+    </Tooltip>
+  );
+};
 
 // Универсальная подпись + значение
 const LabeledValue: React.FC<{ label: string; children?: React.ReactNode }> = ({ label, children }) => (
@@ -153,20 +178,29 @@ const JobShowContent = () => {
         )}
         {r.ai_review?.submission_md && (
           <Box sx={{ mt: 2 }}>
-            <Section title="Submission Draft">
-              <ReactMarkdown
-                components={{
-                  p: (p) => <Typography sx={{ mb: 1.5 }} {...p} />,
-                  li: (p) => <li><Typography component="span" {...p} /></li>,
-                  a: (p) => <MuiLink underline="hover" target="_blank" rel="noopener" {...p} />,
-                  pre: (p) => (
-                    <Box component="pre" sx={{ p: 1.5, bgcolor: "action.hover", borderRadius: 2, overflowX: "auto" }} {...p} />
-                  ),
-                }}
-              >
-                {r.ai_review.submission_md}
-              </ReactMarkdown>
-            </Section>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
+              <Typography variant="subtitle2" sx={{ opacity: 0.7 }}>
+                Submission Draft
+              </Typography>
+              <CopySubmissionButton text={r.ai_review.submission_md} />
+            </Box>
+
+            <Card variant="outlined" sx={{ borderRadius: 2 }}>
+              <CardContent>
+                <ReactMarkdown
+                  components={{
+                    p: (p) => <Typography sx={{ mb: 1.5 }} {...p} />,
+                    li: (p) => <li><Typography component="span" {...p} /></li>,
+                    a: (p) => <MuiLink underline="hover" target="_blank" rel="noopener" {...p} />,
+                    pre: (p) => (
+                      <Box component="pre" sx={{ p: 1.5, bgcolor: "action.hover", borderRadius: 2, overflowX: "auto" }} {...p} />
+                    ),
+                  }}
+                >
+                  {r.ai_review.submission_md}
+                </ReactMarkdown>
+              </CardContent>
+            </Card>
           </Box>
         )}
 
