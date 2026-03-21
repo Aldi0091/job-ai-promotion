@@ -19,11 +19,18 @@ import {
 } from "react-admin";
 import { Stack } from "@mui/material";
 import { Link } from "react-router-dom";
-
+import PsychologyIcon from "@mui/icons-material/Psychology";
+import { Chip } from "@mui/material";
+import { httpJson } from "../../utils/http";
 import type { UpworkJob } from "../../types/upwork";
 
 import {
   Box,
+  Typography,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
   IconButton,
   Link as MuiLink,
 } from "@mui/material";
@@ -32,15 +39,67 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import StarIcon from "@mui/icons-material/Star";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 
+
 const JobsPagination = (props: any) => (
   <Pagination rowsPerPageOptions={[10, 20, 50, 100, 200]} {...props} />
 );
 
+
+/* ------------------------------- Actions ------------------------------- */
+
+const jobFilters = [
+  <CountryMultiFilterInput
+    key="country_multi_filter"
+    source="client_countries"
+    label="Countries"
+    alwaysOn
+  />,
+];
+
+const AssessLatestButton = () => {
+  const [loading, setLoading] = React.useState(false);
+  const notify = useNotify();
+  const refresh = useRefresh();
+
+  const handleClick = async () => {
+    const ok = window.confirm("Assess fit for latest 100 jobs?");
+    if (!ok) return;
+
+    try {
+      setLoading(true);
+
+      const res = await httpJson("/api/upwork-jobs/assess-fit-latest?limit=100", {
+        method: "POST",
+      });
+
+      notify(
+        `Done. Processed: ${res.processed}, failed: ${res.failed}`,
+        { type: res.failed ? "warning" : "info" }
+      );
+
+      refresh();
+    } catch (e: any) {
+      notify(e?.message || "Failed to assess latest jobs", { type: "warning" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Button onClick={handleClick} disabled={loading}>
+      {loading ? "Assessing 100..." : "Assess latest 100"}
+    </Button>
+  );
+};
+
 const ListActions = () => (
   <TopToolbar>
+    <AssessLatestButton />
     <ExportButton />
   </TopToolbar>
 );
+
+/* ------------------------------ Utilities ------------------------------ */
 
 const formatRange = (
   lo?: number | null,
@@ -89,6 +148,9 @@ const getSignal = (r: UpworkJob) => {
   return null;
 };
 
+
+/* ----------------------------- Range Field ----------------------------- */
+
 const RangeField: React.FC<{
   label: string;
   min: keyof UpworkJob;
@@ -102,6 +164,9 @@ const RangeField: React.FC<{
     }
   />
 );
+
+
+/* --------------------------- Country Filter --------------------------- */
 
 type CountryMultiFilterInputProps = {
   source?: string;
@@ -136,14 +201,64 @@ function CountryMultiFilterInput(props: CountryMultiFilterInputProps) {
   );
 }
 
-const jobFilters = [
-  <CountryMultiFilterInput
-    key="country_multi_filter"
-    source="client_countries"
-    label="Countries"
-    alwaysOn
-  />,
-];
+/* --------------------------- Description Cell -------------------------- */
+
+const DescriptionCell: React.FC<{ record: UpworkJob }> = ({ record }) => {
+  const [open, setOpen] = React.useState(false);
+
+  const desc = record?.description || "";
+  const looksLikeHtml = /<\/?[a-z][\s\S]*>/i.test(desc);
+
+  if (!desc) return <>—</>;
+
+  return (
+    <>
+      <Box
+        sx={{
+          display: "-webkit-box",
+          WebkitLineClamp: 3,
+          WebkitBoxOrient: "vertical",
+          overflow: "hidden",
+          whiteSpace: "pre-wrap",
+        }}
+      >
+        {desc}
+      </Box>
+
+      <Button
+        size="small"
+        variant="text"
+        onClick={() => setOpen(true)}
+        sx={{ mt: 0.5, p: 0, minWidth: 0, textTransform: "none" }}
+      >
+        View
+      </Button>
+
+      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle>Full Description</DialogTitle>
+
+        <DialogContent dividers>
+          {looksLikeHtml ? (
+            <Box
+              dangerouslySetInnerHTML={{ __html: desc }}
+              sx={{ wordBreak: "break-word" }}
+            />
+          ) : (
+            <Typography
+              component="pre"
+              sx={{ whiteSpace: "pre-wrap", wordBreak: "break-word", m: 0 }}
+            >
+              {desc}
+            </Typography>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
+
+
+/* ----------------------------- Delete Button --------------------------- */
 
 const DeleteJobButton: React.FC<{ id: number }> = ({ id }) => {
   const [deleteOne, { isLoading }] = useDelete();
@@ -171,6 +286,33 @@ const DeleteJobButton: React.FC<{ id: number }> = ({ id }) => {
   return (
     <IconButton size="small" onClick={handleDelete} disabled={isLoading}>
       <DeleteIcon fontSize="small" />
+    </IconButton>
+  );
+};
+
+const AssessFitButton: React.FC<{ record: UpworkJob }> = ({ record }) => {
+  const [loading, setLoading] = React.useState(false);
+  const notify = useNotify();
+  const refresh = useRefresh();
+
+  const handleClick = async () => {
+    try {
+      setLoading(true);
+      await httpJson(`/api/upwork-jobs/${record.id}/assess-fit`, {
+        method: "POST",
+      });
+      notify("Fit assessed", { type: "info" });
+      refresh();
+    } catch (e: any) {
+      notify(e?.message || "Failed to assess fit", { type: "warning" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <IconButton size="small" onClick={handleClick} disabled={loading}>
+      <PsychologyIcon fontSize="small" />
     </IconButton>
   );
 };
@@ -209,6 +351,8 @@ const FavoriteJobButton: React.FC<{ record: UpworkJob }> = ({ record }) => {
   );
 };
 
+/* ------------------------------ Main List ------------------------------ */
+
 export const UpworkFavoritesList = () => (
   <List
     title="Favorites"
@@ -220,7 +364,6 @@ export const UpworkFavoritesList = () => (
   >
     <Stack spacing={1} sx={{ mb: 1 }}>
       <FilterForm filters={jobFilters} />
-
       <Datagrid
         bulkActionButtons={false}
         rowClick={false}
@@ -296,13 +439,27 @@ export const UpworkFavoritesList = () => (
             cleanTotalSpent(record?.client_total_spent)
           }
         />
+        <FunctionField
+          label="Fit"
+          render={(r: UpworkJob) => {
+            if (r?.fit_score == null) return "—";
 
+            return (
+              <Chip
+                size="small"
+                label={`${r.fit_score}%`}
+                variant="outlined"
+              />
+            );
+          }}
+        />
         <DateField source="scraped_at" label="Scraped" showTime />
 
         <FunctionField
           label="Actions"
           render={(r: UpworkJob) => (
             <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
+              <AssessFitButton record={r} />
               <FavoriteJobButton record={r} />
               <DeleteJobButton id={r.id} />
             </Box>

@@ -32,5 +32,6 @@ export type UpworkJob = {
     ai_review?: {
     summary_md?: string;
     submission_md?: string;
+    fit_score?: number | null;
   };
 }
