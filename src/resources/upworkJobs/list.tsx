@@ -17,6 +17,7 @@ import {
   useGetList,
   FilterForm,
 } from "react-admin";
+import { ListContextProvider, useListContext } from "react-admin";
 import { Stack } from "@mui/material";
 import { Link } from "react-router-dom";
 import PsychologyIcon from "@mui/icons-material/Psychology";
@@ -352,17 +353,29 @@ const FavoriteJobButton: React.FC<{ record: UpworkJob }> = ({ record }) => {
   );
 };
 
-/* ------------------------------ Main List ------------------------------ */
+const JobsTable: React.FC<{ onlyGreen: boolean }> = ({ onlyGreen }) => {
+  const list = useListContext<UpworkJob>();
 
-export const UpworkJobsList = () => (
-  <List
-    actions={<ListActions />}
-    pagination={<JobsPagination />}
-    perPage={20}
-    sort={{ field: "id", order: "DESC" }}
-  >
-    <Stack spacing={1} sx={{ mb: 1 }}>
-      <FilterForm filters={jobFilters} />
+  const filteredData = React.useMemo(() => {
+    const rows = Array.isArray(list.data) ? list.data : [];
+    if (!onlyGreen) return rows;
+    return rows.filter((record) => getSignal(record) === "green");
+  }, [list.data, onlyGreen]);
+
+  const filteredIds = React.useMemo(
+    () => filteredData.map((record) => record.id),
+    [filteredData]
+  );
+
+  return (
+    <ListContextProvider
+      value={{
+        ...list,
+        data: filteredData,
+        ids: filteredIds,
+        total: filteredData.length,
+      }}
+    >
       <Datagrid
         bulkActionButtons={false}
         rowClick={false}
@@ -438,6 +451,7 @@ export const UpworkJobsList = () => (
             cleanTotalSpent(record?.client_total_spent)
           }
         />
+
         <FunctionField
           label="Fit"
           render={(r: UpworkJob) => {
@@ -452,8 +466,8 @@ export const UpworkJobsList = () => (
             );
           }}
         />
+
         <DateField source="scraped_at" label="Scraped" showTime />
-        
 
         <FunctionField
           label="Actions"
@@ -466,7 +480,34 @@ export const UpworkJobsList = () => (
           )}
         />
       </Datagrid>
-    </Stack>
-    
-  </List>
-);
+    </ListContextProvider>
+  );
+};
+
+/* ------------------------------ Main List ------------------------------ */
+export const UpworkJobsList = () => {
+  const [onlyGreen, setOnlyGreen] = React.useState(false);
+
+  return (
+    <List
+      actions={<ListActions />}
+      pagination={<JobsPagination />}
+      perPage={20}
+      sort={{ field: "id", order: "DESC" }}
+    >
+      <Stack spacing={1} sx={{ mb: 1 }}>
+        <Box sx={{ display: "flex", gap: 1, alignItems: "center", flexWrap: "wrap" }}>
+          <FilterForm filters={jobFilters} />
+          <Button
+            variant={onlyGreen ? "contained" : "outlined"}
+            onClick={() => setOnlyGreen((prev) => !prev)}
+          >
+            {onlyGreen ? "Green only: ON" : "Green only"}
+          </Button>
+        </Box>
+
+        <JobsTable onlyGreen={onlyGreen} />
+      </Stack>
+    </List>
+  );
+};
