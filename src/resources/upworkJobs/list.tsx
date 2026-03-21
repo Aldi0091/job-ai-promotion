@@ -34,7 +34,12 @@ import {
   DialogContent,
   IconButton,
   Link as MuiLink,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
+
 
 import DeleteIcon from "@mui/icons-material/Delete";
 import StarIcon from "@mui/icons-material/Star";
@@ -353,14 +358,29 @@ const FavoriteJobButton: React.FC<{ record: UpworkJob }> = ({ record }) => {
   );
 };
 
-const JobsTable: React.FC<{ onlyGreen: boolean }> = ({ onlyGreen }) => {
+
+const JobsTable: React.FC<{
+  onlyGreen: boolean;
+  minFitScore: number | null;
+}> = ({ onlyGreen, minFitScore }) => {
   const list = useListContext<UpworkJob>();
 
   const filteredData = React.useMemo(() => {
-    const rows = Array.isArray(list.data) ? list.data : [];
-    if (!onlyGreen) return rows;
-    return rows.filter((record) => getSignal(record) === "green");
-  }, [list.data, onlyGreen]);
+    let rows = Array.isArray(list.data) ? list.data : [];
+
+    if (onlyGreen) {
+      rows = rows.filter((record) => getSignal(record) === "green");
+    }
+
+    if (minFitScore != null) {
+      rows = rows.filter(
+        (record) =>
+          record.fit_score != null && Number(record.fit_score) >= minFitScore
+      );
+    }
+
+    return rows;
+  }, [list.data, onlyGreen, minFitScore]);
 
   const filteredIds = React.useMemo(
     () => filteredData.map((record) => record.id),
@@ -484,9 +504,12 @@ const JobsTable: React.FC<{ onlyGreen: boolean }> = ({ onlyGreen }) => {
   );
 };
 
+
 /* ------------------------------ Main List ------------------------------ */
+
 export const UpworkJobsList = () => {
   const [onlyGreen, setOnlyGreen] = React.useState(false);
+  const [minFitScore, setMinFitScore] = React.useState<number | null>(null);
 
   return (
     <List
@@ -498,16 +521,42 @@ export const UpworkJobsList = () => {
       <Stack spacing={1} sx={{ mb: 1 }}>
         <Box sx={{ display: "flex", gap: 1, alignItems: "center", flexWrap: "wrap" }}>
           <FilterForm filters={jobFilters} />
+
           <Button
             variant={onlyGreen ? "contained" : "outlined"}
             onClick={() => setOnlyGreen((prev) => !prev)}
           >
             {onlyGreen ? "Green only: ON" : "Green only"}
           </Button>
+
+          <FormControl size="small" sx={{ minWidth: 180 }}>
+            <InputLabel id="fit-score-filter-label">Fit score</InputLabel>
+            <Select
+              labelId="fit-score-filter-label"
+              value={minFitScore ?? ""}
+              label="Fit score"
+              onChange={(e) => {
+                const value = e.target.value;
+                setMinFitScore(value === "" ? null : Number(value));
+              }}
+            >
+              <MenuItem value="">All</MenuItem>
+              <MenuItem value={90}>{`>= 90`}</MenuItem>
+              <MenuItem value={80}>{`>= 80`}</MenuItem>
+              <MenuItem value={70}>{`>= 70`}</MenuItem>
+              <MenuItem value={60}>{`>= 60`}</MenuItem>
+              <MenuItem value={50}>{`>= 50`}</MenuItem>
+              <MenuItem value={40}>{`>= 40`}</MenuItem>
+              <MenuItem value={30}>{`>= 30`}</MenuItem>
+              <MenuItem value={20}>{`>= 20`}</MenuItem>
+              <MenuItem value={10}>{`>= 10`}</MenuItem>
+            </Select>
+          </FormControl>
         </Box>
 
-        <JobsTable onlyGreen={onlyGreen} />
+        <JobsTable onlyGreen={onlyGreen} minFitScore={minFitScore} />
       </Stack>
     </List>
   );
 };
+
