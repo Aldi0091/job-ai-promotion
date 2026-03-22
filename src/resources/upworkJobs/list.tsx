@@ -40,16 +40,13 @@ import {
   MenuItem,
 } from "@mui/material";
 
-
 import DeleteIcon from "@mui/icons-material/Delete";
 import StarIcon from "@mui/icons-material/Star";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 
-
 const JobsPagination = (props: any) => (
   <Pagination rowsPerPageOptions={[10, 20, 50, 100, 200]} {...props} />
 );
-
 
 /* ------------------------------- Actions ------------------------------- */
 
@@ -78,10 +75,9 @@ const AssessLatestButton = () => {
         method: "POST",
       });
 
-      notify(
-        `Done. Processed: ${res.processed}, failed: ${res.failed}`,
-        { type: res.failed ? "warning" : "info" }
-      );
+      notify(`Done. Processed: ${res.processed}, failed: ${res.failed}`, {
+        type: res.failed ? "warning" : "info",
+      });
 
       refresh();
     } catch (e: any) {
@@ -107,11 +103,7 @@ const ListActions = () => (
 
 /* ------------------------------ Utilities ------------------------------ */
 
-const formatRange = (
-  lo?: number | null,
-  hi?: number | null,
-  unit?: string
-) => {
+const formatRange = (lo?: number | null, hi?: number | null, unit?: string) => {
   if (lo == null && hi == null) return "—";
   return `$${lo ?? "?"}–$${hi ?? "?"}${unit ?? ""}`;
 };
@@ -142,6 +134,15 @@ const getHourlyMax = (r: UpworkJob) => {
   return Number.isFinite(best) ? best : null;
 };
 
+const isHourlyJob = (r: UpworkJob) => {
+  const rateType = String(r?.job_rate_type || "").toLowerCase();
+  return (
+    rateType.includes("hour") ||
+    r?.job_hourly_min != null ||
+    r?.job_hourly_max != null
+  );
+};
+
 const getSignal = (r: UpworkJob) => {
   const hourly = getHourlyMax(r);
   const spent = parseMoneySpent(r?.client_total_spent);
@@ -153,7 +154,6 @@ const getSignal = (r: UpworkJob) => {
   if (hourlyOk || spentOk) return "orange";
   return null;
 };
-
 
 /* ----------------------------- Range Field ----------------------------- */
 
@@ -170,7 +170,6 @@ const RangeField: React.FC<{
     }
   />
 );
-
 
 /* --------------------------- Country Filter --------------------------- */
 
@@ -201,8 +200,12 @@ function CountryMultiFilterInput(props: CountryMultiFilterInputProps) {
       optionText="name"
       optionValue="id"
       isLoading={isLoading}
-      fullWidth
-      sx={{ minWidth: 320 }}
+      sx={{
+        width: 220,
+        minWidth: 220,
+        maxWidth: "100%",
+        m: 0,
+      }}
     />
   );
 }
@@ -263,7 +266,6 @@ const DescriptionCell: React.FC<{ record: UpworkJob }> = ({ record }) => {
   );
 };
 
-
 /* ----------------------------- Delete Button --------------------------- */
 
 const DeleteJobButton: React.FC<{ id: number }> = ({ id }) => {
@@ -274,19 +276,15 @@ const DeleteJobButton: React.FC<{ id: number }> = ({ id }) => {
   const handleDelete = () => {
     if (!window.confirm(`Delete job #${id}?`)) return;
 
-    deleteOne(
-      "upwork-jobs",
-      { id },
-      {
-        onSuccess: () => {
-          notify(`Job #${id} deleted`, { type: "info" });
-          refresh();
-        },
-        onError: (error: any) => {
-          notify(error?.body?.detail || error.message, { type: "warning" });
-        },
-      }
-    );
+    deleteOne("upwork-jobs", { id }, {
+      onSuccess: () => {
+        notify(`Job #${id} deleted`, { type: "info" });
+        refresh();
+      },
+      onError: (error: any) => {
+        notify(error?.body?.detail || error.message, { type: "warning" });
+      },
+    });
   };
 
   return (
@@ -323,7 +321,6 @@ const AssessFitButton: React.FC<{ record: UpworkJob }> = ({ record }) => {
   );
 };
 
-
 const FavoriteJobButton: React.FC<{ record: UpworkJob }> = ({ record }) => {
   const [updateOne, { isLoading }] = useUpdate();
   const notify = useNotify();
@@ -341,7 +338,9 @@ const FavoriteJobButton: React.FC<{ record: UpworkJob }> = ({ record }) => {
         mutationMode: "pessimistic",
         onSuccess: () => refresh(),
         onError: (error: any) => {
-          notify(error?.message || "Failed to update favorite", { type: "warning" });
+          notify(error?.message || "Failed to update favorite", {
+            type: "warning",
+          });
         },
       }
     );
@@ -358,11 +357,11 @@ const FavoriteJobButton: React.FC<{ record: UpworkJob }> = ({ record }) => {
   );
 };
 
-
 const JobsTable: React.FC<{
   onlyGreen: boolean;
+  onlyHourly: boolean;
   minFitScore: number | null;
-}> = ({ onlyGreen, minFitScore }) => {
+}> = ({ onlyGreen, onlyHourly, minFitScore }) => {
   const list = useListContext<UpworkJob>();
 
   const filteredData = React.useMemo(() => {
@@ -370,6 +369,10 @@ const JobsTable: React.FC<{
 
     if (onlyGreen) {
       rows = rows.filter((record) => getSignal(record) === "green");
+    }
+
+    if (onlyHourly) {
+      rows = rows.filter((record) => isHourlyJob(record));
     }
 
     if (minFitScore != null) {
@@ -380,7 +383,7 @@ const JobsTable: React.FC<{
     }
 
     return rows;
-  }, [list.data, onlyGreen, minFitScore]);
+  }, [list.data, onlyGreen, onlyHourly, minFitScore]);
 
   const filteredIds = React.useMemo(
     () => filteredData.map((record) => record.id),
@@ -478,11 +481,7 @@ const JobsTable: React.FC<{
             if (r?.fit_score == null) return "—";
 
             return (
-              <Chip
-                size="small"
-                label={`${r.fit_score}%`}
-                variant="outlined"
-              />
+              <Chip size="small" label={`${r.fit_score}%`} variant="outlined" />
             );
           }}
         />
@@ -504,11 +503,11 @@ const JobsTable: React.FC<{
   );
 };
 
-
 /* ------------------------------ Main List ------------------------------ */
 
 export const UpworkJobsList = () => {
   const [onlyGreen, setOnlyGreen] = React.useState(false);
+  const [onlyHourly, setOnlyHourly] = React.useState(false);
   const [minFitScore, setMinFitScore] = React.useState<number | null>(null);
 
   return (
@@ -519,17 +518,32 @@ export const UpworkJobsList = () => {
       sort={{ field: "id", order: "DESC" }}
     >
       <Stack spacing={1} sx={{ mb: 1 }}>
-        <Box sx={{ display: "flex", gap: 1, alignItems: "center", flexWrap: "wrap" }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            flexWrap: "wrap",
+            width: "100%",
+            "& .RaFilterForm-form": {
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              flexWrap: "wrap",
+            },
+            "& .RaFilterForm-input": {
+              marginTop: 0,
+              marginBottom: 0,
+            },
+            "& .MuiFormControl-root": {
+              marginTop: 0,
+              marginBottom: 0,
+            },
+          }}
+        >
           <FilterForm filters={jobFilters} />
 
-          <Button
-            variant={onlyGreen ? "contained" : "outlined"}
-            onClick={() => setOnlyGreen((prev) => !prev)}
-          >
-            {onlyGreen ? "Green only: ON" : "Green only"}
-          </Button>
-
-          <FormControl size="small" sx={{ minWidth: 180 }}>
+          <FormControl size="small" sx={{ width: 140, minWidth: 140, flex: "0 0 auto" }}>
             <InputLabel id="fit-score-filter-label">Fit score</InputLabel>
             <Select
               labelId="fit-score-filter-label"
@@ -552,11 +566,32 @@ export const UpworkJobsList = () => {
               <MenuItem value={10}>{`>= 10`}</MenuItem>
             </Select>
           </FormControl>
+
+          <Button
+            size="small"
+            variant={onlyGreen ? "contained" : "outlined"}
+            onClick={() => setOnlyGreen((prev) => !prev)}
+            sx={{ flex: "0 0 auto", whiteSpace: "nowrap" }}
+          >
+            {onlyGreen ? "Green only: ON" : "Green only"}
+          </Button>
+
+          <Button
+            size="small"
+            variant={onlyHourly ? "contained" : "outlined"}
+            onClick={() => setOnlyHourly((prev) => !prev)}
+            sx={{ flex: "0 0 auto", whiteSpace: "nowrap" }}
+          >
+            {onlyHourly ? "Hourly only: ON" : "Hourly only"}
+          </Button>
         </Box>
 
-        <JobsTable onlyGreen={onlyGreen} minFitScore={minFitScore} />
+        <JobsTable
+          onlyGreen={onlyGreen}
+          onlyHourly={onlyHourly}
+          minFitScore={minFitScore}
+        />
       </Stack>
     </List>
   );
 };
-
