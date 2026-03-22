@@ -17,7 +17,7 @@ import {
   useGetList,
   FilterForm,
 } from "react-admin";
-import { ListContextProvider, useListContext } from "react-admin";
+import { useListContext } from "react-admin";
 import { Stack } from "@mui/material";
 import { Link } from "react-router-dom";
 import PsychologyIcon from "@mui/icons-material/Psychology";
@@ -357,241 +357,223 @@ const FavoriteJobButton: React.FC<{ record: UpworkJob }> = ({ record }) => {
   );
 };
 
-const JobsTable: React.FC<{
-  onlyGreen: boolean;
-  onlyHourly: boolean;
-  minFitScore: number | null;
-}> = ({ onlyGreen, onlyHourly, minFitScore }) => {
-  const list = useListContext<UpworkJob>();
+const JobsTable = () => (
+  <Datagrid
+    bulkActionButtons={false}
+    rowClick={false}
+    rowSx={(record: UpworkJob) => {
+      const signal = getSignal(record);
+      if (!signal) return {};
 
-  const filteredData = React.useMemo(() => {
-    let rows = Array.isArray(list.data) ? list.data : [];
+      if (signal === "green") {
+        return {
+          backgroundColor: "rgba(46, 125, 50, 0.10)",
+          borderLeft: "4px solid rgba(46, 125, 50, 0.85)",
+        };
+      }
 
-    if (onlyGreen) {
-      rows = rows.filter((record) => getSignal(record) === "green");
-    }
+      return {
+        backgroundColor: "rgba(245, 124, 0, 0.10)",
+        borderLeft: "4px solid rgba(245, 124, 0, 0.85)",
+      };
+    }}
+    sx={{
+      "& .RaDatagrid-thead": { position: "sticky", top: 0, zIndex: 1 },
+    }}
+  >
+    <FunctionField
+      label="ID"
+      render={(record: UpworkJob) => (
+        <Link to={`/upwork-jobs/${record.id}/show`}>
+          {record.id}
+        </Link>
+      )}
+    />
 
-    if (onlyHourly) {
-      rows = rows.filter((record) => isHourlyJob(record));
-    }
+    <FunctionField
+      label="Title"
+      render={(r: UpworkJob) =>
+        r?.source_url ? (
+          <MuiLink
+            href={r.source_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            underline="hover"
+          >
+            {r.job_title || "—"}
+          </MuiLink>
+        ) : (
+          <TextField source="job_title" />
+        )
+      }
+    />
 
-    if (minFitScore != null) {
-      rows = rows.filter(
-        (record) =>
-          record.fit_score != null && Number(record.fit_score) >= minFitScore
-      );
-    }
+    <TextField source="client_country" label="Country" />
+    <TextField source="client_city" label="City" />
+    <TextField source="client_rating" label="Rating" />
+    <TextField source="job_rate_type" label="Rate Type" />
 
-    return rows;
-  }, [list.data, onlyGreen, onlyHourly, minFitScore]);
+    <RangeField
+      label="Hourly Rate"
+      min="job_hourly_min"
+      max="job_hourly_max"
+      unit="/hr"
+    />
 
-  const filteredIds = React.useMemo(
-    () => filteredData.map((record) => record.id),
-    [filteredData]
-  );
+    <RangeField
+      label="Budget"
+      min="job_budget_min"
+      max="job_budget_max"
+      unit=""
+    />
+
+    <FunctionField
+      label="Total Spent"
+      render={(record: UpworkJob) => cleanTotalSpent(record?.client_total_spent)}
+    />
+
+    <FunctionField
+      label="Fit"
+      render={(r: UpworkJob) => {
+        if (r?.fit_score == null) return "—";
+
+        return <Chip size="small" label={`${r.fit_score}%`} variant="outlined" />;
+      }}
+    />
+
+    <DateField source="scraped_at" label="Scraped" showTime />
+
+    <FunctionField
+      label="Actions"
+      render={(r: UpworkJob) => (
+        <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
+          <AssessFitButton record={r} />
+          <FavoriteJobButton record={r} />
+          <DeleteJobButton id={r.id} />
+        </Box>
+      )}
+    />
+  </Datagrid>
+);
+
+const JobsFilterBar = () => {
+  const { filterValues, setFilters } = useListContext<UpworkJob>();
+
+  const applyFilters = (nextFilters: Record<string, any>) => {
+    const cleaned = Object.fromEntries(
+      Object.entries(nextFilters).filter(([, value]) => {
+        if (value == null || value === "") return false;
+        if (Array.isArray(value) && value.length === 0) return false;
+        return true;
+      })
+    );
+
+    setFilters(cleaned);
+  };
+
+  const onlyGreen = Boolean(filterValues.only_green);
+  const onlyHourly = Boolean(filterValues.only_hourly);
+  const minFitScore =
+    filterValues.min_fit_score == null || filterValues.min_fit_score === ""
+      ? ""
+      : Number(filterValues.min_fit_score);
 
   return (
-    <ListContextProvider
-      value={{
-        ...list,
-        data: filteredData,
-        ids: filteredIds,
-        total: filteredData.length,
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 1,
+        flexWrap: "wrap",
+        width: "100%",
+        "& .RaFilterForm-form": {
+          display: "flex",
+          alignItems: "center",
+          gap: 1,
+          flexWrap: "wrap",
+        },
+        "& .RaFilterForm-input": {
+          marginTop: 0,
+          marginBottom: 0,
+        },
+        "& .MuiFormControl-root": {
+          marginTop: 0,
+          marginBottom: 0,
+        },
       }}
     >
-      <Datagrid
-        bulkActionButtons={false}
-        rowClick={false}
-        rowSx={(record: UpworkJob) => {
-          const signal = getSignal(record);
-          if (!signal) return {};
+      <FilterForm filters={jobFilters} />
 
-          if (signal === "green") {
-            return {
-              backgroundColor: "rgba(46, 125, 50, 0.10)",
-              borderLeft: "4px solid rgba(46, 125, 50, 0.85)",
-            };
-          }
-
-          return {
-            backgroundColor: "rgba(245, 124, 0, 0.10)",
-            borderLeft: "4px solid rgba(245, 124, 0, 0.85)",
-          };
-        }}
-        sx={{
-          "& .RaDatagrid-thead": { position: "sticky", top: 0, zIndex: 1 },
-        }}
-      >
-        <FunctionField
-          label="ID"
-          render={(record: UpworkJob) => (
-            <Link to={`/upwork-jobs/${record.id}/show`}>
-              {record.id}
-            </Link>
-          )}
-        />
-
-        <FunctionField
-          label="Title"
-          render={(r: UpworkJob) =>
-            r?.source_url ? (
-              <MuiLink
-                href={r.source_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                underline="hover"
-              >
-                {r.job_title || "—"}
-              </MuiLink>
-            ) : (
-              <TextField source="job_title" />
-            )
-          }
-        />
-
-        <TextField source="client_country" label="Country" />
-        <TextField source="client_city" label="City" />
-        <TextField source="client_rating" label="Rating" />
-        <TextField source="job_rate_type" label="Rate Type" />
-
-        <RangeField
-          label="Hourly Rate"
-          min="job_hourly_min"
-          max="job_hourly_max"
-          unit="/hr"
-        />
-
-        <RangeField
-          label="Budget"
-          min="job_budget_min"
-          max="job_budget_max"
-          unit=""
-        />
-
-        <FunctionField
-          label="Total Spent"
-          render={(record: UpworkJob) =>
-            cleanTotalSpent(record?.client_total_spent)
-          }
-        />
-
-        <FunctionField
-          label="Fit"
-          render={(r: UpworkJob) => {
-            if (r?.fit_score == null) return "—";
-
-            return (
-              <Chip size="small" label={`${r.fit_score}%`} variant="outlined" />
-            );
+      <FormControl size="small" sx={{ width: 140, minWidth: 140, flex: "0 0 auto" }}>
+        <InputLabel id="fit-score-filter-label">Fit score</InputLabel>
+        <Select
+          labelId="fit-score-filter-label"
+          value={minFitScore}
+          label="Fit score"
+          onChange={(e) => {
+            const value = e.target.value;
+            applyFilters({
+              ...filterValues,
+              min_fit_score: value === "" ? undefined : Number(value),
+            });
           }}
-        />
+        >
+          <MenuItem value="">All</MenuItem>
+          <MenuItem value={90}>{`>= 90`}</MenuItem>
+          <MenuItem value={80}>{`>= 80`}</MenuItem>
+          <MenuItem value={70}>{`>= 70`}</MenuItem>
+          <MenuItem value={60}>{`>= 60`}</MenuItem>
+          <MenuItem value={50}>{`>= 50`}</MenuItem>
+          <MenuItem value={40}>{`>= 40`}</MenuItem>
+          <MenuItem value={30}>{`>= 30`}</MenuItem>
+          <MenuItem value={20}>{`>= 20`}</MenuItem>
+          <MenuItem value={10}>{`>= 10`}</MenuItem>
+        </Select>
+      </FormControl>
 
-        <DateField source="scraped_at" label="Scraped" showTime />
+      <Button
+        size="small"
+        variant={onlyGreen ? "contained" : "outlined"}
+        onClick={() => {
+          applyFilters({
+            ...filterValues,
+            only_green: onlyGreen ? undefined : true,
+          });
+        }}
+        sx={{ flex: "0 0 auto", whiteSpace: "nowrap" }}
+      >
+        {onlyGreen ? "Green only: ON" : "Green only"}
+      </Button>
 
-        <FunctionField
-          label="Actions"
-          render={(r: UpworkJob) => (
-            <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
-              <AssessFitButton record={r} />
-              <FavoriteJobButton record={r} />
-              <DeleteJobButton id={r.id} />
-            </Box>
-          )}
-        />
-      </Datagrid>
-    </ListContextProvider>
+      <Button
+        size="small"
+        variant={onlyHourly ? "contained" : "outlined"}
+        onClick={() => {
+          applyFilters({
+            ...filterValues,
+            only_hourly: onlyHourly ? undefined : true,
+          });
+        }}
+        sx={{ flex: "0 0 auto", whiteSpace: "nowrap" }}
+      >
+        {onlyHourly ? "Hourly only: ON" : "Hourly only"}
+      </Button>
+    </Box>
   );
 };
 
 /* ------------------------------ Main List ------------------------------ */
 
-export const UpworkJobsList = () => {
-  const [onlyGreen, setOnlyGreen] = React.useState(false);
-  const [onlyHourly, setOnlyHourly] = React.useState(false);
-  const [minFitScore, setMinFitScore] = React.useState<number | null>(null);
-
-  return (
-    <List
-      actions={<ListActions />}
-      pagination={<JobsPagination />}
-      perPage={20}
-      sort={{ field: "id", order: "DESC" }}
-    >
-      <Stack spacing={1} sx={{ mb: 1 }}>
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 1,
-            flexWrap: "wrap",
-            width: "100%",
-            "& .RaFilterForm-form": {
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
-              flexWrap: "wrap",
-            },
-            "& .RaFilterForm-input": {
-              marginTop: 0,
-              marginBottom: 0,
-            },
-            "& .MuiFormControl-root": {
-              marginTop: 0,
-              marginBottom: 0,
-            },
-          }}
-        >
-          <FilterForm filters={jobFilters} />
-
-          <FormControl size="small" sx={{ width: 140, minWidth: 140, flex: "0 0 auto" }}>
-            <InputLabel id="fit-score-filter-label">Fit score</InputLabel>
-            <Select
-              labelId="fit-score-filter-label"
-              value={minFitScore ?? ""}
-              label="Fit score"
-              onChange={(e) => {
-                const value = e.target.value;
-                setMinFitScore(value === "" ? null : Number(value));
-              }}
-            >
-              <MenuItem value="">All</MenuItem>
-              <MenuItem value={90}>{`>= 90`}</MenuItem>
-              <MenuItem value={80}>{`>= 80`}</MenuItem>
-              <MenuItem value={70}>{`>= 70`}</MenuItem>
-              <MenuItem value={60}>{`>= 60`}</MenuItem>
-              <MenuItem value={50}>{`>= 50`}</MenuItem>
-              <MenuItem value={40}>{`>= 40`}</MenuItem>
-              <MenuItem value={30}>{`>= 30`}</MenuItem>
-              <MenuItem value={20}>{`>= 20`}</MenuItem>
-              <MenuItem value={10}>{`>= 10`}</MenuItem>
-            </Select>
-          </FormControl>
-
-          <Button
-            size="small"
-            variant={onlyGreen ? "contained" : "outlined"}
-            onClick={() => setOnlyGreen((prev) => !prev)}
-            sx={{ flex: "0 0 auto", whiteSpace: "nowrap" }}
-          >
-            {onlyGreen ? "Green only: ON" : "Green only"}
-          </Button>
-
-          <Button
-            size="small"
-            variant={onlyHourly ? "contained" : "outlined"}
-            onClick={() => setOnlyHourly((prev) => !prev)}
-            sx={{ flex: "0 0 auto", whiteSpace: "nowrap" }}
-          >
-            {onlyHourly ? "Hourly only: ON" : "Hourly only"}
-          </Button>
-        </Box>
-
-        <JobsTable
-          onlyGreen={onlyGreen}
-          onlyHourly={onlyHourly}
-          minFitScore={minFitScore}
-        />
-      </Stack>
-    </List>
-  );
-};
+export const UpworkJobsList = () => (
+  <List
+    actions={<ListActions />}
+    pagination={<JobsPagination />}
+    perPage={20}
+    sort={{ field: "id", order: "DESC" }}
+  >
+    <Stack spacing={1} sx={{ mb: 1 }}>
+      <JobsFilterBar />
+      <JobsTable />
+    </Stack>
+  </List>
+);
