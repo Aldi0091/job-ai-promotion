@@ -201,10 +201,13 @@ function CountryMultiFilterInput(props: CountryMultiFilterInputProps) {
       optionValue="id"
       isLoading={isLoading}
       sx={{
-        width: 220,
-        minWidth: 220,
-        maxWidth: "100%",
+        width: "100%",
+        minWidth: 0,
+        flex: "1 1 100%",
         m: 0,
+        "& .MuiFormControl-root": {
+          width: "100%",
+        },
       }}
     />
   );
@@ -482,19 +485,27 @@ const JobsFilterBar = () => {
     <Box
       sx={{
         display: "flex",
-        alignItems: "center",
+        alignItems: "flex-start",
         gap: 1,
         flexWrap: "wrap",
         width: "100%",
         "& .RaFilterForm-form": {
           display: "flex",
-          alignItems: "center",
+          alignItems: "flex-start",
           gap: 1,
           flexWrap: "wrap",
+          width: "100%",
+          flex: "1 1 100%",
         },
         "& .RaFilterForm-input": {
           marginTop: 0,
           marginBottom: 0,
+          width: "100%",
+          flex: "1 1 100%",
+          minWidth: 0,
+        },
+        "& .RaFilterForm-input .MuiFormControl-root": {
+          width: "100%",
         },
         "& .MuiFormControl-root": {
           marginTop: 0,
@@ -504,7 +515,7 @@ const JobsFilterBar = () => {
     >
       <FilterForm filters={jobFilters} />
 
-      <FormControl size="small" sx={{ width: 140, minWidth: 140, flex: "0 0 auto" }}>
+      <FormControl size="small" sx={{ width: 220, minWidth: 220, flex: "0 0 auto" }}>
         <InputLabel id="fit-score-filter-label">Fit score</InputLabel>
         <Select
           labelId="fit-score-filter-label"
