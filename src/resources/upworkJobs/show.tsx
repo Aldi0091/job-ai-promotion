@@ -18,6 +18,7 @@ import {
 } from "@mui/material";
 import type { UpworkJob } from "../../types/upwork";
 import ReactMarkdown from "react-markdown";
+import { JobChat } from "./jobChat";
 
 const HeaderActions = () => (
   <TopToolbar>
@@ -261,6 +262,12 @@ const JobShowContent = () => {
           </Section>
         </Grid>
       </Grid>
+
+      <Box sx={{ mt: 1 }}>
+        <Section title="Chat about this job">
+          <JobChat jobId={r.id} />
+        </Section>
+      </Box>
     </Box>
   );
 };
