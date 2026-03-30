@@ -30,6 +30,28 @@ export const dataProvider: DataProvider = {
       };
     }
 
+    const isJobApplications = resource === "job-applications";
+
+    if (isJobApplications) {
+      const page = params?.pagination?.page ?? 1;
+      const perPage = params?.pagination?.perPage ?? 20;
+      const sort = params?.sort?.field ?? "updated_at";
+      const order = params?.sort?.order ?? "DESC";
+      const filter = encodeURIComponent(JSON.stringify(params?.filter ?? {}));
+      const json = await httpJson(
+        `/api/job-applications?page=${page}&page_size=${perPage}&sort=${encodeURIComponent(String(sort))}&order=${encodeURIComponent(String(order))}&filter=${filter}`
+      );
+
+      return {
+        data: (json.items || []) as RaRecord[],
+        total: Number(json.total ?? 0),
+        pageInfo: {
+          hasNextPage: page * perPage < Number(json.total ?? 0),
+          hasPreviousPage: page > 1,
+        },
+      };
+    }
+
     if (resource !== "upwork-jobs" && !isFavorites) {
       throw new Error("unsupported resource");
     }
@@ -77,19 +99,40 @@ export const dataProvider: DataProvider = {
 
   // Заглушки — добавим при появлении эндпоинтов
   getOne: async (resource, params) => {
+    if (resource === "job-applications") {
+      const res = await httpJson(`/api/job-applications/${params.id}`);
+      return { data: res };
+    }
     if (resource !== "upwork-jobs") throw new Error("unsupported resource");
     const res = await httpJson(`/api/upwork-jobs/${params.id}`);
     return { data: res };
   },
   getMany: async () => ({ data: [] }),
   getManyReference: async () => ({ data: [], total: 0 }),
-  create: async () => {
+  create: async (resource, params) => {
+    if (resource === "job-applications") {
+      const res = await httpJson(`/api/job-applications`, {
+        method: "POST",
+        body: JSON.stringify(params.data ?? {}),
+        headers: { "Content-Type": "application/json" },
+      });
+      return { data: res as RaRecord };
+    }
     throw new Error("create not implemented");
   },
   async update<RecordType extends RaRecord = RaRecord>(
     resource: string,
     params: any
   ) {
+    if (resource === "job-applications") {
+      const res = await httpJson(`/api/job-applications/${params.id}`, {
+        method: "PUT",
+        body: JSON.stringify(params.data ?? {}),
+        headers: { "Content-Type": "application/json" },
+      });
+      return { data: res as RecordType };
+    }
+
     if (resource !== "upwork-jobs") throw new Error("unsupported resource");
 
     const res = await httpJson(`/api/upwork-jobs/${params.id}`, {
@@ -104,12 +147,11 @@ export const dataProvider: DataProvider = {
     resource: string,
     params: DeleteParams<RecordType>
   ): Promise<DeleteResult<RecordType>> {
-    if (resource !== "upwork-jobs") throw new Error("unsupported resource");
+    if (resource !== "upwork-jobs" && resource !== "job-applications") throw new Error("unsupported resource");
 
-    // ⚠️ важное: используем httpJson, чтобы попасть на правильный бекенд-хост
     let id: Identifier = params.id as Identifier;
     try {
-      const res = await httpJson(`/api/upwork-jobs/${id}`, {
+      const res = await httpJson(resource === "job-applications" ? `/api/job-applications/${id}` : `/api/upwork-jobs/${id}`, {
         method: "DELETE",
       });
       // если сервер вернул 200 { id }

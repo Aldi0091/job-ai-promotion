@@ -7,12 +7,15 @@ import { upworkJobsResource, upworkFavoritesResource } from "./resources/upworkJ
 import { UpworkSemanticSearch } from "./resources/upworkJobs/semanticSearch";
 import { UpworkAsk } from "./resources/upworkJobs/ask";
 import StarIcon from "@mui/icons-material/Star";
+import WorkOutlineIcon from "@mui/icons-material/WorkOutline";
+import { jobApplicationsResource } from "./resources/jobApplications";
 
 export default function App() {
   return (
     <LayoutProvider>
       <Admin dataProvider={dataProvider} layout={MyLayout}>
         <Resource {...upworkJobsResource} />
+        <Resource {...jobApplicationsResource} icon={WorkOutlineIcon} />
         <Resource {...upworkFavoritesResource} icon={StarIcon} />
         <Resource
           name="upwork-jobs-search"
