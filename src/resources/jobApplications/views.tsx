@@ -90,7 +90,6 @@ export const JobApplicationsList = () => (
       <TextField source="submission_status" />
       <TextField source="response_status" />
       <TextField source="lead_name" />
-      <DateField source="created_at" showTime />
       <DateField source="updated_at" showTime />
       <EditButton />
       <DeleteButton mutationMode="pessimistic" />
