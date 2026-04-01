@@ -11,4 +11,4 @@ services:
       - .:/app
       - /app/node_modules
     extra_hosts:
-      - "host.docker.internal:host-gateway" # доступ к хосту из контейнера (Linux)
+      - "host.docker.internal:host-gateway"

@@ -1,69 +1,217 @@
-# React + TypeScript + Vite
+# 🚀 Upwork Admin
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> AI-assisted admin panel for exploring Upwork jobs, semantic search, fit assessment, favorites, and application tracking.
 
-Currently, two official plugins are available:
+[![React](https://img.shields.io/badge/React-19-20232A?logo=react)](#)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)](#)
+[![Vite](https://img.shields.io/badge/Vite-Frontend-646CFF?logo=vite)](#)
+[![React Admin](https://img.shields.io/badge/React--Admin-5-5E35B1)](#)
+[![MUI](https://img.shields.io/badge/MUI-7-007FFF?logo=mui)](#)
+[![License](https://img.shields.io/badge/license-MIT-green)](#license)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## ✨ Overview
 
-## Expanding the ESLint configuration
+**Upwork Admin** is a lightweight React Admin dashboard for working with Upwork job data through a custom backend API.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+It helps you:
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- browse and inspect scraped Upwork jobs
+- run AI-powered semantic search
+- ask questions over job data
+- assess job fit for the latest jobs
+- keep a favorites list
+- track job applications in one place
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+Built for speed, simplicity, and extension.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+---
+
+## 🧩 Features
+
+### 🔎 Upwork Jobs
+- paginated job list
+- country-based filtering
+- rate, budget, and client metadata
+- quick job inspection
+- full job details page
+
+### 🤖 AI Utilities
+- **Semantic Search** over job data
+- **Ask AI** interface for querying job context
+- batch **fit assessment** for latest jobs
+
+### ⭐ Favorites
+- save promising jobs for quick follow-up
+- keep a cleaner shortlist separate from the main feed
+
+### 📌 Job Applications Tracker
+- create and manage application records
+- track submission and response statuses
+- store notes, recruiter info, source, and links
+
+---
+
+## 🖼️ Screens / Modules
+
+- **Upwork Jobs**
+- **Favorites**
+- **Semantic Search**
+- **Ask AI**
+- **Job Applications**
+
+---
+
+## 🛠 Tech Stack
+
+- **React 19**
+- **TypeScript**
+- **Vite**
+- **React Admin**
+- **Material UI**
+- Custom backend API via `VITE_API_URL`
+
+---
+
+## 📂 Project Structure
+
+```bash
+src/
+├── components/
+├── layout/
+├── providers/
+├── resources/
+│   ├── upworkJobs/
+│   └── jobApplications/
+├── types/
+└── utils/
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## ⚙️ Getting Started
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/your-username/upwork-admin.git
+cd upwork-admin
 ```
+
+### 2. Install dependencies
+
+```bash
+npm install
+```
+
+### 3. Configure environment
+
+Create a `.env` file:
+
+```env
+VITE_API_URL=http://localhost:8079
+```
+
+### 4. Start development server
+
+```bash
+npm run dev
+```
+
+App will be available at:
+
+```bash
+http://localhost:5173
+```
+
+---
+
+## 🐳 Run with Docker
+
+```bash
+docker compose up --build
+```
+
+The frontend container exposes:
+
+```bash
+http://localhost:5173
+```
+
+---
+
+## 📡 Backend Expectations
+
+This frontend expects a backend that provides endpoints similar to:
+
+```bash
+/api/upwork-jobs
+/api/upwork-jobs/semantic-search
+/api/upwork-jobs/assess-fit-latest
+/api/upwork-jobs-ask
+/api/job-applications
+```
+
+You can adapt the `dataProvider` and HTTP layer if your backend uses different routes.
+
+---
+
+## 🧪 Available Scripts
+
+```bash
+npm run dev      # start local dev server
+npm run build    # production build
+npm run preview  # preview production build
+npm run lint     # run eslint
+```
+
+---
+
+## 🔐 Security Notes
+
+Before publishing publicly, review the following:
+
+- do **not** commit `.env` files
+- sanitize any external HTML before rendering it
+- validate external URLs before injecting them into links
+- keep API credentials strictly on the backend
+
+---
+
+## 🚧 Roadmap
+
+- authentication
+- saved search presets
+- better job scoring
+- proposal generation workflows
+- application analytics dashboard
+- backend connector templates
+
+---
+
+## 🤝 Contributing
+
+Contributions, ideas, and improvements are welcome.
+
+1. Fork the repo
+2. Create a feature branch
+3. Commit your changes
+4. Open a pull request
+
+---
+
+## 📄 License
+
+MIT License. Feel free to use, modify, and build on top of it.
+
+---
+
+## 💬 Why this project?
+
+Job discovery tools are noisy.  
+This project was built to make job research, filtering, and follow-up more structured — with AI features layered on top of a practical admin workflow.
+
+---
+
+## ⭐ Support
+
+If this project is useful, give it a star and build something cool with it.
