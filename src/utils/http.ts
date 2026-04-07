@@ -1,4 +1,4 @@
-const API_URL = (import.meta as any)?.env?.VITE_API_URL ?? "http://localhost:8079";
+const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8079";
 
 
 export const httpJson = async (path: string, init?: RequestInit) => {
