@@ -59,6 +59,30 @@ const jobFilters = [
   />,
 ];
 
+const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8079";
+
+const ExportLatest50Button = () => {
+  const [loading, setLoading] = React.useState(false);
+  const notify = useNotify();
+
+  const handleClick = async () => {
+    try {
+      setLoading(true);
+      window.open(`${API_URL}/api/upwork-jobs/export/latest?limit=50`, "_blank", "noopener,noreferrer");
+    } catch (e: any) {
+      notify(e?.message || "Failed to export latest jobs", { type: "warning" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Button onClick={handleClick} disabled={loading}>
+      {loading ? "Preparing export..." : "Export latest 50"}
+    </Button>
+  );
+};
+
 const AssessLatestButton = () => {
   const [loading, setLoading] = React.useState(false);
   const notify = useNotify();
@@ -96,6 +120,7 @@ const AssessLatestButton = () => {
 
 const ListActions = () => (
   <TopToolbar>
+    <ExportLatest50Button />
     <AssessLatestButton />
     <ExportButton />
   </TopToolbar>
