@@ -1,4 +1,4 @@
-# 🚀 Upwork Admin
+# 🚀 Upwork Admin CRM (React-admin + FastAPI + RAG + LLM + Chrome Extension)
 
 > AI-assisted admin panel for exploring Upwork jobs, semantic search, fit assessment, favorites, and application tracking.
 
