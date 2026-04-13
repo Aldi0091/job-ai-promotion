@@ -7,6 +7,7 @@ export const upworkJobsResource = {
   name: "upwork-jobs",
   list: UpworkJobsList,
   show: UpworkJobShow,
+  options: { label: "Upwork Jobs List" },
 };
 
 export const upworkFavoritesResource = {

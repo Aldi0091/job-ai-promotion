@@ -6,19 +6,16 @@ import {
   TextField,
   DateField,
   TopToolbar,
-  ExportButton,
   Pagination,
   FunctionField,
   useDelete,
   useNotify,
   useRefresh,
   useUpdate,
-  AutocompleteArrayInput,
   useGetList,
-  FilterForm,
 } from "react-admin";
 import { useListContext } from "react-admin";
-import { Stack } from "@mui/material";
+import { Stack, Autocomplete } from "@mui/material";
 import { Link } from "react-router-dom";
 import PsychologyIcon from "@mui/icons-material/Psychology";
 import { Chip } from "@mui/material";
@@ -38,6 +35,7 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  TextField as MuiTextField,
 } from "@mui/material";
 
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -50,14 +48,6 @@ const JobsPagination = (props: any) => (
 
 /* ------------------------------- Actions ------------------------------- */
 
-const jobFilters = [
-  <CountryMultiFilterInput
-    key="country_multi_filter"
-    source="client_countries"
-    label="Countries"
-    alwaysOn
-  />,
-];
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8079";
 
@@ -122,7 +112,6 @@ const ListActions = () => (
   <TopToolbar>
     <ExportLatest50Button />
     <AssessLatestButton />
-    <ExportButton />
   </TopToolbar>
 );
 
@@ -195,48 +184,6 @@ const RangeField: React.FC<{
     }
   />
 );
-
-/* --------------------------- Country Filter --------------------------- */
-
-type CountryMultiFilterInputProps = {
-  source?: string;
-  label?: string;
-  alwaysOn?: boolean;
-};
-
-function CountryMultiFilterInput(props: CountryMultiFilterInputProps) {
-  const { data, isLoading } = useGetList("upwork-job-countries", {
-    pagination: { page: 1, perPage: 500 },
-    sort: { field: "name", order: "ASC" },
-    filter: {},
-  });
-
-  const choices = React.useMemo(() => {
-    return ((data || []) as any[]).map((item) => ({
-      id: item.id,
-      name: item.name,
-    }));
-  }, [data]);
-
-  return (
-    <AutocompleteArrayInput
-      {...props}
-      choices={choices}
-      optionText="name"
-      optionValue="id"
-      isLoading={isLoading}
-      sx={{
-        width: "100%",
-        minWidth: 0,
-        flex: "1 1 100%",
-        m: 0,
-        "& .MuiFormControl-root": {
-          width: "100%",
-        },
-      }}
-    />
-  );
-}
 
 /* --------------------------- Description Cell -------------------------- */
 
@@ -487,6 +434,24 @@ const JobsTable = () => (
 const JobsFilterBar = () => {
   const { filterValues, setFilters } = useListContext<UpworkJob>();
 
+  const { data: countryData, isLoading: countriesLoading } = useGetList(
+    "upwork-job-countries",
+    { pagination: { page: 1, perPage: 500 }, sort: { field: "name", order: "ASC" }, filter: {} }
+  );
+
+  const countryOptions = React.useMemo(
+    () => ((countryData || []) as any[]).map((item) => ({ id: item.id, name: item.name })),
+    [countryData]
+  );
+
+  const selectedCountries = React.useMemo(
+    () =>
+      countryOptions.filter((opt) =>
+        (filterValues.client_countries || []).includes(opt.id)
+      ),
+    [countryOptions, filterValues.client_countries]
+  );
+
   const applyFilters = (nextFilters: Record<string, any>) => {
     const cleaned = Object.fromEntries(
       Object.entries(nextFilters).filter(([, value]) => {
@@ -495,7 +460,6 @@ const JobsFilterBar = () => {
         return true;
       })
     );
-
     setFilters(cleaned);
   };
 
@@ -507,47 +471,37 @@ const JobsFilterBar = () => {
       : Number(filterValues.min_fit_score);
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "flex-start",
-        gap: 1,
-        flexWrap: "wrap",
-        width: "100%",
-        "& .RaFilterForm-form": {
-          display: "flex",
-          alignItems: "flex-start",
-          gap: 1,
-          flexWrap: "wrap",
-          width: "100%",
-          flex: "1 1 100%",
-        },
-        "& .RaFilterForm-input": {
-          marginTop: 0,
-          marginBottom: 0,
-          width: "100%",
-          flex: "1 1 100%",
-          minWidth: 0,
-        },
-        "& .RaFilterForm-input .MuiFormControl-root": {
-          width: "100%",
-        },
-        "& .MuiFormControl-root": {
-          marginTop: 0,
-          marginBottom: 0,
-        },
-      }}
-    >
-      <FilterForm filters={jobFilters} />
+    <Box sx={{ display: "flex", alignItems: "center", gap: 1, width: "50%" }}>
+      {/* Countries — grows to fill remaining space */}
+      <Autocomplete
+        multiple
+        size="small"
+        loading={countriesLoading}
+        options={countryOptions}
+        getOptionLabel={(opt) => opt.name}
+        isOptionEqualToValue={(opt, val) => opt.id === val.id}
+        value={selectedCountries}
+        onChange={(_e, newValue) => {
+          applyFilters({
+            ...filterValues,
+            client_countries: newValue.map((v) => v.id),
+          });
+        }}
+        sx={{ flex: 1, minWidth: 180 }}
+        renderInput={(params) => (
+          <MuiTextField {...params} label="Countries" size="small" />
+        )}
+      />
 
-      <FormControl size="small" sx={{ width: 220, minWidth: 220, flex: "0 0 auto" }}>
+      {/* Fit score */}
+      <FormControl size="small" sx={{ width: 160, flexShrink: 0 }}>
         <InputLabel id="fit-score-filter-label">Fit score</InputLabel>
         <Select
           labelId="fit-score-filter-label"
           value={minFitScore}
           label="Fit score"
           onChange={(e) => {
-            const value = e.target.value;
+            const value = e.target.value as number | "";
             applyFilters({
               ...filterValues,
               min_fit_score: value === "" ? undefined : Number(value),
@@ -555,42 +509,32 @@ const JobsFilterBar = () => {
           }}
         >
           <MenuItem value="">All</MenuItem>
-          <MenuItem value={90}>{`>= 90`}</MenuItem>
-          <MenuItem value={80}>{`>= 80`}</MenuItem>
-          <MenuItem value={70}>{`>= 70`}</MenuItem>
-          <MenuItem value={60}>{`>= 60`}</MenuItem>
-          <MenuItem value={50}>{`>= 50`}</MenuItem>
-          <MenuItem value={40}>{`>= 40`}</MenuItem>
-          <MenuItem value={30}>{`>= 30`}</MenuItem>
-          <MenuItem value={20}>{`>= 20`}</MenuItem>
-          <MenuItem value={10}>{`>= 10`}</MenuItem>
+          {[90, 80, 70, 60, 50, 40, 30, 20, 10].map((v) => (
+            <MenuItem key={v} value={v}>{`>= ${v}`}</MenuItem>
+          ))}
         </Select>
       </FormControl>
 
+      {/* Green only */}
       <Button
         size="small"
         variant={onlyGreen ? "contained" : "outlined"}
-        onClick={() => {
-          applyFilters({
-            ...filterValues,
-            only_green: onlyGreen ? undefined : true,
-          });
-        }}
-        sx={{ flex: "0 0 auto", whiteSpace: "nowrap" }}
+        onClick={() =>
+          applyFilters({ ...filterValues, only_green: onlyGreen ? undefined : true })
+        }
+        sx={{ flexShrink: 0, whiteSpace: "nowrap", height: 40 }}
       >
         {onlyGreen ? "Green only: ON" : "Green only"}
       </Button>
 
+      {/* Hourly only */}
       <Button
         size="small"
         variant={onlyHourly ? "contained" : "outlined"}
-        onClick={() => {
-          applyFilters({
-            ...filterValues,
-            only_hourly: onlyHourly ? undefined : true,
-          });
-        }}
-        sx={{ flex: "0 0 auto", whiteSpace: "nowrap" }}
+        onClick={() =>
+          applyFilters({ ...filterValues, only_hourly: onlyHourly ? undefined : true })
+        }
+        sx={{ flexShrink: 0, whiteSpace: "nowrap", height: 40 }}
       >
         {onlyHourly ? "Hourly only: ON" : "Hourly only"}
       </Button>
