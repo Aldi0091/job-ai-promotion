@@ -166,3 +166,6 @@ vite.config.ts.timestamp-*
 # Additionals
 tsconfig*.json
 vite.config.ts
+
+CLAUDE.md 
+
