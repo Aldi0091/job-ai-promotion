@@ -12,7 +12,7 @@
 ## ✨ Overview
 
 ![Dashboard](./public/upworkAdmin.png)
-![FilterOver10](./public/upworkAdmin.png)
+![FilterOver10](./public/upworkAdmin1.png)
 
 **Upwork Admin** is a lightweight React Admin dashboard for working with Upwork job data through a custom backend API.
 
