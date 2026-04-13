@@ -395,13 +395,6 @@ const JobsTable = () => (
       unit="/hr"
     />
 
-    <RangeField
-      label="Budget"
-      min="job_budget_min"
-      max="job_budget_max"
-      unit=""
-    />
-
     <FunctionField
       label="Total Spent"
       render={(record: UpworkJob) => cleanTotalSpent(record?.client_total_spent)}
@@ -416,7 +409,7 @@ const JobsTable = () => (
       }}
     />
 
-    <DateField source="scraped_at" label="Scraped" showTime />
+    <DateField source="scraped_at" label="Scraped"  />
 
     <FunctionField
       label="Actions"
