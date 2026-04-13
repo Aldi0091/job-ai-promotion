@@ -25,31 +25,6 @@ It helps you:
 - keep a favorites list
 - track job applications in one place
 
-Built for speed, simplicity, and extension.
-
----
-
-## 🧩 Features
-
-### 🔎 Upwork Jobs
-- paginated job list
-- country-based filtering
-- rate, budget, and client metadata
-- quick job inspection
-- full job details page
-
-### 🤖 AI Utilities
-- **Semantic Search** over job data
-- **Ask AI** interface for querying job context
-- batch **fit assessment** for latest jobs
-
-### ⭐ Favorites
-- save promising jobs for quick follow-up
-- keep a cleaner shortlist separate from the main feed
-
-### 📌 Job Applications Tracker
-- create and manage application records
-- track submission and response statuses
-- store notes, recruiter info, source, and links
+Built for speed, simplicity, and extension. Backed  with FastAPI
 
 ---
