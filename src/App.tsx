@@ -11,12 +11,20 @@ import TableChartIcon from "@mui/icons-material/TableChart";
 import ListAltIcon from "@mui/icons-material/ListAlt";
 import ManageSearchIcon from "@mui/icons-material/ManageSearch";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
+import DashboardCustomizeIcon from "@mui/icons-material/DashboardCustomize";
 import { jobApplicationsResource } from "./resources/jobApplications";
+import { UpworkDashboard } from "./resources/upworkDashboard";
 
 export default function App() {
   return (
     <LayoutProvider>
       <Admin dataProvider={dataProvider} layout={MyLayout}>
+        <Resource
+          name="updash"
+          list={UpworkDashboard}
+          options={{ label: "Stats Dashboard" }}
+          icon={DashboardCustomizeIcon}
+        />
         <Resource {...upworkJobsResource} icon={TableChartIcon} />
         <Resource {...jobApplicationsResource} icon={ListAltIcon} />
         <Resource {...upworkFavoritesResource} icon={StarIcon} />
