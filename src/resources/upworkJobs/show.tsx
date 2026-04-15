@@ -209,29 +209,7 @@ const JobShowContent = () => {
 
       {/* RIGHT: chat */}
       <Box sx={{ flex: "0 0 40%", position: "sticky", top: 16, minWidth: 0 }}>
-        {/* Job Details */}
-        <Section sx={{ mt: 0 }}>
-          <Grid container spacing={1.5}>
-            <Grid item xs={6}><LabeledValue label="Rate Type">{r.job_rate_type}</LabeledValue></Grid>
-            <Grid item xs={6}><LabeledValue label="Experience">{r.job_experience_level}</LabeledValue></Grid>
-            <Grid item xs={6}><LabeledValue label="Duration">{r.job_duration}</LabeledValue></Grid>
-            <Grid item xs={6}><LabeledValue label="Hours/Week">{r.job_hours_per_week}</LabeledValue></Grid>
-            <Grid item xs={12}><Divider sx={{ my: 1 }} /></Grid>
-            <Grid item xs={12}><LabeledValue label="Hourly Range"><MoneyRange lo={r.job_hourly_min} hi={r.job_hourly_max} suffix="/hr" /></LabeledValue></Grid>
-            <Grid item xs={12}><LabeledValue label="Budget Range"><MoneyRange lo={r.job_budget_min} hi={r.job_budget_max} suffix=" budget" /></LabeledValue></Grid>
-            <Grid item xs={12}><Divider sx={{ my: 1 }} /></Grid>
-            <Grid item xs={12}><LabeledValue label="Scraped At">{r.scraped_at ?? "—"}</LabeledValue></Grid>
-            <Grid item xs={12}><LabeledValue label="Source URL">
-              {r.source_url ? (
-                <Tooltip title="Open original job page">
-                  <MuiLink href={r.source_url} target="_blank" rel="noopener" underline="hover">
-                    {r.source_url}
-                  </MuiLink>
-                </Tooltip>
-              ) : "—"}
-            </LabeledValue></Grid>
-          </Grid>
-        </Section>
+        
         {/* Submission Draft */}
         {r.ai_review?.submission_md && (
           <Box>
