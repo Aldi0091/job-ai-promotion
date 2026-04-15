@@ -11,7 +11,6 @@ import {
   Edit,
   Show,
   SimpleForm,
-  SimpleShowLayout,
   TextInput,
   SelectInput,
   DateTimeInput,
@@ -21,8 +20,9 @@ import {
   FilterButton,
   SearchInput,
   required,
-  UrlField,
+  useRecordContext,
 } from "react-admin";
+import { Box, Chip, Divider, Grid, Paper, Stack, Typography } from "@mui/material";
 
 const submissionStatusChoices = [
   { id: "not_submitted", name: "Not submitted" },
@@ -113,24 +113,151 @@ export const JobApplicationEdit = () => (
   </Edit>
 );
 
+const SUBMISSION_CHIP: Record<string, "default" | "primary" | "secondary" | "error" | "warning" | "info" | "success"> = {
+  not_submitted: "default",
+  submitted: "primary",
+  interview_scheduled: "secondary",
+  withdrawn: "error",
+};
+
+const RESPONSE_CHIP: Record<string, "default" | "primary" | "secondary" | "error" | "warning" | "info" | "success"> = {
+  awaiting: "warning",
+  accepted: "success",
+  declined: "error",
+  no_response: "default",
+};
+
+const SectionLabel = ({ children }: { children: React.ReactNode }) => (
+  <Typography variant="overline" color="text.secondary" sx={{ display: "block", mb: 1.5, lineHeight: 1 }}>
+    {children}
+  </Typography>
+);
+
+const FieldBlock = ({ label, children }: { label: string; children: React.ReactNode }) => (
+  <Box>
+    <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
+      {label}
+    </Typography>
+    <Typography variant="body2">{children}</Typography>
+  </Box>
+);
+
+const JobApplicationShowLayout = () => {
+  const record = useRecordContext();
+  if (!record) return null;
+
+  const location = [record.city, record.country].filter(Boolean).join(", ") || "—";
+  const submissionColor = SUBMISSION_CHIP[record.submission_status] ?? "default";
+  const responseColor = RESPONSE_CHIP[record.response_status] ?? "default";
+
+  return (
+    <Box sx={{ p: 3 }}>
+      <Grid container spacing={2}>
+
+        {/* Row 1 col 1: Identity */}
+        <Grid size={{ xs: 12, md: 8 }}>
+          <Paper variant="outlined" sx={{ p: 3, height: "100%" }}>
+            <Typography variant="overline" color="text.secondary">{record.company_name || "—"}</Typography>
+            <Typography variant="h5" fontWeight={700} gutterBottom>{record.title || "Untitled"}</Typography>
+            {record.job_url && (
+              <Typography
+                component="a"
+                href={record.job_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                variant="body2"
+                color="primary"
+                sx={{ wordBreak: "break-all" }}
+              >
+                {record.job_url}
+              </Typography>
+            )}
+          </Paper>
+        </Grid>
+
+        {/* Row 1 col 2: Status */}
+        <Grid size={{ xs: 12, md: 4 }}>
+          <Paper variant="outlined" sx={{ p: 3, height: "100%" }}>
+            <SectionLabel>Status</SectionLabel>
+            <Stack spacing={2}>
+              <Box>
+                <Typography variant="caption" color="text.secondary" display="block" gutterBottom>Submission</Typography>
+                <Chip
+                  label={record.submission_status?.replace(/_/g, " ") || "—"}
+                  color={submissionColor}
+                  size="small"
+                  sx={{ textTransform: "capitalize" }}
+                />
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary" display="block" gutterBottom>Response</Typography>
+                <Chip
+                  label={record.response_status?.replace(/_/g, " ") || "—"}
+                  color={responseColor}
+                  size="small"
+                  sx={{ textTransform: "capitalize" }}
+                />
+              </Box>
+              <Divider />
+              <FieldBlock label="Source">{record.source?.replace(/_/g, " ") || "—"}</FieldBlock>
+              <FieldBlock label="Location">{location}</FieldBlock>
+            </Stack>
+          </Paper>
+        </Grid>
+
+        {/* Row 2 col 1: Lead */}
+        <Grid size={{ xs: 12, md: 4 }}>
+          <Paper variant="outlined" sx={{ p: 3, height: "100%" }}>
+            <SectionLabel>Lead</SectionLabel>
+            <Stack spacing={2}>
+              <FieldBlock label="Name">{record.lead_name || "—"}</FieldBlock>
+              <Box>
+                <Typography variant="caption" color="text.secondary" display="block" gutterBottom>Contacts</Typography>
+                <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>{record.lead_contacts || "—"}</Typography>
+              </Box>
+            </Stack>
+          </Paper>
+        </Grid>
+
+        {/* Row 2 col 2: Description */}
+        <Grid size={{ xs: 12, md: 8 }}>
+          <Paper variant="outlined" sx={{ p: 3, height: "100%" }}>
+            <SectionLabel>Description</SectionLabel>
+            <Typography variant="body2" sx={{ whiteSpace: "pre-wrap", lineHeight: 1.7, color: "text.secondary" }}>
+              {record.description || "—"}
+            </Typography>
+          </Paper>
+        </Grid>
+
+        {/* Row 3: Notes full width */}
+        <Grid size={{ xs: 12 }}>
+          <Paper variant="outlined" sx={{ p: 3 }}>
+            <SectionLabel>Notes</SectionLabel>
+            <Typography variant="body2" sx={{ whiteSpace: "pre-wrap", lineHeight: 1.7, color: "text.secondary" }}>
+              {record.notes || "—"}
+            </Typography>
+          </Paper>
+        </Grid>
+
+        {/* Footer */}
+        <Grid size={{ xs: 12 }}>
+          <Stack direction="row" spacing={3}>
+            <Typography variant="caption" color="text.disabled">
+              Created: {record.created_at ? new Date(record.created_at).toLocaleString() : "—"}
+            </Typography>
+            <Typography variant="caption" color="text.disabled">
+              Updated: {record.updated_at ? new Date(record.updated_at).toLocaleString() : "—"}
+            </Typography>
+          </Stack>
+        </Grid>
+
+      </Grid>
+    </Box>
+  );
+};
+
 export const JobApplicationShow = () => (
   <Show>
-    <SimpleShowLayout>
-      <TextField source="id" />
-      <TextField source="title" />
-      <TextField source="company_name" />
-      <UrlField source="job_url" />
-      <TextField source="submission_status" />
-      <TextField source="response_status" />
-      <TextField source="source" />
-      <TextField source="country" />
-      <TextField source="city" />
-      <TextField source="lead_name" />
-      <TextField source="lead_contacts" />
-      <TextField source="description" />
-      <TextField source="notes" />
-      <DateField source="created_at" showTime />
-      <DateField source="updated_at" showTime />
-    </SimpleShowLayout>
+    <JobApplicationShowLayout />
   </Show>
 );
