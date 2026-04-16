@@ -7,6 +7,7 @@ import {
   EditButton,
   ShowButton,
   DeleteButton,
+  FunctionField,
   Create,
   Edit,
   Show,
@@ -79,6 +80,20 @@ const JobApplicationFormFields = () => (
   </>
 );
 
+const SUBMISSION_CHIP: Record<string, "default" | "primary" | "secondary" | "error" | "warning" | "info" | "success"> = {
+  not_submitted: "default",
+  submitted: "primary",
+  interview_scheduled: "secondary",
+  withdrawn: "error",
+};
+
+const RESPONSE_CHIP: Record<string, "default" | "primary" | "secondary" | "error" | "warning" | "info" | "success"> = {
+  awaiting: "warning",
+  accepted: "success",
+  declined: "error",
+  no_response: "default",
+};
+
 export const JobApplicationsList = () => (
   <List filters={filters} actions={<JobTrackerActions />} sort={{ field: "updated_at", order: "DESC" }}>
     <Datagrid rowClick="show">
@@ -87,12 +102,34 @@ export const JobApplicationsList = () => (
       <TextField source="company_name" />
       <TextField source="city" />
       <TextField source="country" />
-      <TextField source="submission_status" />
-      <TextField source="response_status" />
+      <FunctionField
+        source="submission_status"
+        label="Submission Status"
+        render={(record) => (
+          <Chip
+            label={record.submission_status?.replace(/_/g, " ") || "—"}
+            color={SUBMISSION_CHIP[record.submission_status] ?? "default"}
+            size="small"
+            sx={{ textTransform: "capitalize" }}
+          />
+        )}
+      />
+      <FunctionField
+        source="response_status"
+        label="Response Status"
+        render={(record) => (
+          <Chip
+            label={record.response_status?.replace(/_/g, " ") || "—"}
+            color={RESPONSE_CHIP[record.response_status] ?? "default"}
+            size="small"
+            sx={{ textTransform: "capitalize" }}
+          />
+        )}
+      />
       <TextField source="lead_name" />
       <DateField source="updated_at" showTime />
-      <EditButton />
-      <DeleteButton mutationMode="pessimistic" />
+      <EditButton label="" />
+      <DeleteButton label="" mutationMode="pessimistic" />
     </Datagrid>
   </List>
 );
@@ -112,20 +149,6 @@ export const JobApplicationEdit = () => (
     </SimpleForm>
   </Edit>
 );
-
-const SUBMISSION_CHIP: Record<string, "default" | "primary" | "secondary" | "error" | "warning" | "info" | "success"> = {
-  not_submitted: "default",
-  submitted: "primary",
-  interview_scheduled: "secondary",
-  withdrawn: "error",
-};
-
-const RESPONSE_CHIP: Record<string, "default" | "primary" | "secondary" | "error" | "warning" | "info" | "success"> = {
-  awaiting: "warning",
-  accepted: "success",
-  declined: "error",
-  no_response: "default",
-};
 
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
   <Typography variant="overline" color="text.secondary" sx={{ display: "block", mb: 1.5, lineHeight: 1 }}>
