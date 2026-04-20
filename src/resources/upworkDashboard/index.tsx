@@ -447,7 +447,7 @@ export const UpworkDashboard: React.FC = () => {
   const theme = useTheme();
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 1400, mx: "auto" }}>
+    <Box sx={{ p: { xs: 2, md: 3 }, width: "100%" }}>
       <Title title="Upwork Dashboard" />
 
       <Box mb={4}>
