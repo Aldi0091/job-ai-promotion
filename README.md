@@ -26,6 +26,7 @@ It helps you:
 - keep a favorites list
 - track job applications in one place
 
+
 Built for speed, simplicity, and extension. Backed  with FastAPI
 
 ---
