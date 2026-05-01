@@ -30,6 +30,25 @@ export const dataProvider: DataProvider = {
       };
     }
 
+    if (resource === "stacks") {
+      const page = params?.pagination?.page ?? 1;
+      const perPage = params?.pagination?.perPage ?? 50;
+      const sort = params?.sort?.field ?? "name";
+      const order = params?.sort?.order ?? "ASC";
+      const filter = encodeURIComponent(JSON.stringify(params?.filter ?? {}));
+      const json = await httpJson(
+        `/api/stacks?page=${page}&page_size=${perPage}&sort=${encodeURIComponent(String(sort))}&order=${encodeURIComponent(String(order))}&filter=${filter}`
+      );
+      return {
+        data: (json.items || []) as RaRecord[],
+        total: Number(json.total ?? 0),
+        pageInfo: {
+          hasNextPage: page * perPage < Number(json.total ?? 0),
+          hasPreviousPage: page > 1,
+        },
+      };
+    }
+
     const isJobApplications = resource === "job-applications";
 
     if (isJobApplications) {
@@ -99,6 +118,10 @@ export const dataProvider: DataProvider = {
 
   // Заглушки — добавим при появлении эндпоинтов
   getOne: async (resource, params) => {
+    if (resource === "stacks") {
+      const res = await httpJson(`/api/stacks/${params.id}`);
+      return { data: res };
+    }
     if (resource === "job-applications") {
       const res = await httpJson(`/api/job-applications/${params.id}`);
       return { data: res };
@@ -110,6 +133,14 @@ export const dataProvider: DataProvider = {
   getMany: async () => ({ data: [] }),
   getManyReference: async () => ({ data: [], total: 0 }),
   create: async (resource, params) => {
+    if (resource === "stacks") {
+      const res = await httpJson(`/api/stacks`, {
+        method: "POST",
+        body: JSON.stringify({ name: String(params.data?.name ?? "").trim() }),
+        headers: { "Content-Type": "application/json" },
+      });
+      return { data: res as RaRecord };
+    }
     if (resource === "job-applications") {
       const res = await httpJson(`/api/job-applications`, {
         method: "POST",
@@ -124,6 +155,18 @@ export const dataProvider: DataProvider = {
     resource: string,
     params: any
   ) {
+    if (resource === "stacks") {
+      const body: Record<string, unknown> = {};
+      if (params.data?.name !== undefined) {
+        body.name = String(params.data.name ?? "").trim();
+      }
+      const res = await httpJson(`/api/stacks/${params.id}`, {
+        method: "PUT",
+        body: JSON.stringify(body),
+        headers: { "Content-Type": "application/json" },
+      });
+      return { data: res as RecordType };
+    }
     if (resource === "job-applications") {
       const res = await httpJson(`/api/job-applications/${params.id}`, {
         method: "PUT",
@@ -147,11 +190,17 @@ export const dataProvider: DataProvider = {
     resource: string,
     params: DeleteParams<RecordType>
   ): Promise<DeleteResult<RecordType>> {
-    if (resource !== "upwork-jobs" && resource !== "job-applications") throw new Error("unsupported resource");
+    if (resource !== "upwork-jobs" && resource !== "job-applications" && resource !== "stacks") throw new Error("unsupported resource");
 
     let id: Identifier = params.id as Identifier;
+    const deleteUrl =
+      resource === "stacks"
+        ? `/api/stacks/${id}`
+        : resource === "job-applications"
+        ? `/api/job-applications/${id}`
+        : `/api/upwork-jobs/${id}`;
     try {
-      const res = await httpJson(resource === "job-applications" ? `/api/job-applications/${id}` : `/api/upwork-jobs/${id}`, {
+      const res = await httpJson(deleteUrl, {
         method: "DELETE",
       });
       // если сервер вернул 200 { id }

@@ -9,10 +9,12 @@ import { UpworkAsk } from "./resources/upworkJobs/ask";
 import StarIcon from "@mui/icons-material/Star";
 import TableChartIcon from "@mui/icons-material/TableChart";
 import ListAltIcon from "@mui/icons-material/ListAlt";
+import LayersIcon from "@mui/icons-material/Layers";
 import ManageSearchIcon from "@mui/icons-material/ManageSearch";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import DashboardCustomizeIcon from "@mui/icons-material/DashboardCustomize";
 import { jobApplicationsResource } from "./resources/jobApplications";
+import { stacksResource } from "./resources/stacks";
 import { UpworkDashboard } from "./resources/upworkDashboard";
 
 export default function App() {
@@ -27,6 +29,7 @@ export default function App() {
         />
         <Resource {...upworkJobsResource} icon={TableChartIcon} />
         <Resource {...jobApplicationsResource} icon={ListAltIcon} />
+        <Resource {...stacksResource} icon={LayersIcon} />
         <Resource {...upworkFavoritesResource} icon={StarIcon} />
         <Resource
           name="upwork-jobs-search"
