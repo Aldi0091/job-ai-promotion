@@ -61,7 +61,7 @@ export const StacksList = () => (
       <TextField source="name" />
       <DateField source="updated_at" showTime />
       <EditButton label="" />
-      <DeleteButton label="" mutationMode="pessimistic" />
+      <DeleteButton label="" mutationMode="optimistic" redirect={false} />
     </Datagrid>
   </List>
 );
