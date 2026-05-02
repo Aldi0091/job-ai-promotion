@@ -5,7 +5,6 @@ import {
   TextField,
   DateField,
   EditButton,
-  DeleteButton,
   Create,
   Edit,
   SimpleForm,
@@ -17,7 +16,13 @@ import {
   required,
   maxLength,
   useNotify,
+  useDelete,
+  useRecordContext,
+  useRefresh,
+  useResourceContext,
+  Button,
 } from "react-admin";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 const filters = [<SearchInput key="q" source="q" alwaysOn />];
 
@@ -35,6 +40,38 @@ const transform = (data: any) => ({
   ...data,
   name: String(data?.name ?? "").trim(),
 });
+
+const InstantDeleteButton = () => {
+  const record = useRecordContext();
+  const resource = useResourceContext();
+  const [deleteOne, { isLoading }] = useDelete();
+  const refresh = useRefresh();
+  const notify = useNotify();
+  if (!record || !resource) return null;
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    deleteOne(
+      resource,
+      { id: record.id, previousData: record },
+      {
+        mutationMode: "optimistic",
+        onSuccess: () => refresh(),
+        onError: (error: any) =>
+          notify(String(error?.message ?? "Error"), { type: "error" }),
+      },
+    );
+  };
+  return (
+    <Button
+      label=""
+      onClick={handleClick}
+      disabled={isLoading}
+      sx={{ minWidth: 0 }}
+    >
+      <DeleteIcon fontSize="small" />
+    </Button>
+  );
+};
 
 const useStackErrorHandler = () => {
   const notify = useNotify();
@@ -61,7 +98,7 @@ export const StacksList = () => (
       <TextField source="name" />
       <DateField source="updated_at" showTime />
       <EditButton label="" />
-      <DeleteButton label="" mutationMode="optimistic" redirect={false} />
+      <InstantDeleteButton />
     </Datagrid>
   </List>
 );
