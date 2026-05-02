@@ -22,8 +22,10 @@ import {
   useResourceContext,
   useDataProvider,
   Button,
+  Confirm,
 } from "react-admin";
 import DeleteIcon from "@mui/icons-material/Delete";
+import DeleteSweepIcon from "@mui/icons-material/DeleteSweep";
 import DownloadIcon from "@mui/icons-material/Download";
 import UploadIcon from "@mui/icons-material/Upload";
 
@@ -180,11 +182,77 @@ const ImportCsvButton = () => {
   );
 };
 
+const FlushTableButton = () => {
+  const dataProvider = useDataProvider();
+  const notify = useNotify();
+  const refresh = useRefresh();
+  const [open, setOpen] = React.useState(false);
+  const [loading, setLoading] = React.useState(false);
+  const handleConfirm = async () => {
+    setLoading(true);
+    try {
+      const perPage = 500;
+      const allIds: any[] = [];
+      while (true) {
+        const { data } = await dataProvider.getList("stacks", {
+          pagination: { page: 1, perPage },
+          sort: { field: "name", order: "ASC" },
+          filter: {},
+        });
+        if (data.length === 0) break;
+        allIds.push(...data.map((r: any) => r.id));
+        if (data.length < perPage) break;
+      }
+      let ok = 0;
+      let fail = 0;
+      for (const id of allIds) {
+        try {
+          await dataProvider.delete("stacks", { id, previousData: { id } });
+          ok++;
+        } catch {
+          fail++;
+        }
+      }
+      notify(
+        `Flushed ${ok} stack(s)${fail ? `, ${fail} failed` : ""}`,
+        { type: fail ? "warning" : "success" },
+      );
+      refresh();
+    } catch (e: any) {
+      notify(String(e?.message ?? "Flush failed"), { type: "error" });
+    } finally {
+      setLoading(false);
+      setOpen(false);
+    }
+  };
+  return (
+    <>
+      <Button
+        label="Flush Table"
+        onClick={() => setOpen(true)}
+        disabled={loading}
+        sx={{ color: "error.main" }}
+      >
+        <DeleteSweepIcon fontSize="small" />
+      </Button>
+      <Confirm
+        isOpen={open}
+        loading={loading}
+        title="Flush stacks table"
+        content="This will permanently remove ALL stack records. This action cannot be undone. Are you sure?"
+        onConfirm={handleConfirm}
+        onClose={() => setOpen(false)}
+      />
+    </>
+  );
+};
+
 const StacksActions = () => (
   <TopToolbar>
     <CreateButton />
     <ImportCsvButton />
     <ExportCsvButton />
+    <FlushTableButton />
   </TopToolbar>
 );
 
