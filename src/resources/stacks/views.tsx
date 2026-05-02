@@ -316,6 +316,7 @@ export const StacksList = () => (
     sort={{ field: "name", order: "ASC" }}
     perPage={50}
     pagination={<StacksPagination />}
+    empty={false}
   >
     <Datagrid rowClick="edit" bulkActionButtons={false}>
       <TextField source="id" />
